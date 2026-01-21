@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if object %}{% trans "Kategoriyani tahrirlash" %}{% else %}{% trans "Yangi kategoriya" %}{% endif %} | Kirim-Chiqim
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.icon-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: white;
+}
+
+.color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+}
+
+.icons-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.icon-option {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 18px;
+}
+
+.icon-option:hover {
+    background: #e2e8f0;
+}
+
+.icon-option.selected {
+    background: #3b82f6;
+    color: white;
+}
+
+.colors-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.selected {
+    border-color: #1e293b;
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'expenses:category_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>{% trans "Kategoriyalar ro'yxatiga qaytish" %}
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+        <div class="form-header">
+            <div class="icon-preview" id="iconPreview" style="background: {{ form.instance.color|default:'#3b82f6' }};">
+                <i id="selectedIcon" class="{{ form.instance.icon|default:'fas fa-folder' }}"></i>
+            </div>
+            <h1>
+                {% if object %}
+                <i class="fas fa-edit text-primary me-2"></i>{% trans "Kategoriyani tahrirlash" %}
+                {% else %}
+                <i class="fas fa-plus-circle text-danger me-2"></i>{% trans "Yangi kategoriya" %}
+                {% endif %}
+            </h1>
+            <p class="mb-0 text-muted">
+                {% if object %}
+                {% trans "Kategoriya ma'lumotlarini yangilang" %}
+                {% else %}
+                {% trans "Yangi chiqim kategoriyasini yarating" %}
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p class="mb-0">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Name -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Kategoriya nomi" %}</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.name.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Icon Selection -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Ikon" %}</label>
+                {{ form.icon }}
+                {% if form.icon.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.icon.errors }}
+                </div>
+                {% endif %}
+                
+                <div class="icons-grid" id="iconsGrid">
+                    <!-- Ikonlar ro'yxati -->
+                    {% include 'expenses/_icon_options.html' %}
+                </div>
+            </div>
+
+            <!-- Color Selection -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Rang" %}</label>
+                {{ form.color }}
+                {% if form.color.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.color.errors }}
+                </div>
+                {% endif %}
+                
+                <div class="colors-grid" id="colorsGrid">
+                    <!-- Ranglar ro'yxati -->
+                    {% include 'expenses/_color_options.html' %}
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Tavsif" %}</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.description.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {% trans "Kategoriya haqida qisqacha tavsif (majburiy emas)" %}
+                </div>
+            </div>
+
+            <!-- Is Active -->
+            {% if object %}
+            <div class="mb-4">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                        {% trans "Faol kategoriya" %}
+                    </label>
+                </div>
+                <div class="form-text">
+                    {% trans "Nofaol kategoriya yangi chiqimlar uchun ko'rinmaydi" %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-primary flex-fill">
+                    {% if object %}
+                    <i class="fas fa-sync me-2"></i>{% trans "Yangilash" %}
+                    {% else %}
+                    <i class="fas fa-save me-2"></i>{% trans "Saqlash" %}
+                    {% endif %}
+                </button>
+                <a href="{% url 'expenses:category_list' %}" class="btn btn-secondary flex-fill">
+                    <i class="fas fa-times me-2"></i>{% trans "Bekor qilish" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const iconInput = document.querySelector('#id_icon');
+    const colorInput = document.querySelector('#id_color');
+    const iconPreview = document.querySelector('#iconPreview');
+    const selectedIcon = document.querySelector('#selectedIcon');
+    
+    // Icon selection
+    document.querySelectorAll('.icon-option').forEach(icon => {
+        icon.addEventListener('click', function() {
+            // Remove selected class from all icons
+            document.querySelectorAll('.icon-option').forEach(i => {
+                i.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked icon
+            this.classList.add('selected');
+            
+            // Update icon input and preview
+            const iconClass = this.querySelector('i').className;
+            iconInput.value = iconClass;
+            selectedIcon.className = iconClass;
+        });
+    });
+    
+    // Color selection
+    document.querySelectorAll('.color-option').forEach(color => {
+        color.addEventListener('click', function() {
+            // Remove selected class from all colors
+            document.querySelectorAll('.color-option').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked color
+            this.classList.add('selected');
+            
+            // Update color input and preview
+            const colorValue = this.dataset.color;
+            colorInput.value = colorValue;
+            iconPreview.style.background = colorValue;
+        });
+    });
+    
+    // Set initial selections
+    if (iconInput.value) {
+        const iconOption = document.querySelector(`.icon-option i[class="${iconInput.value}"]`);
+        if (iconOption) {
+            iconOption.parentElement.classList.add('selected');
+        }
+    }
+    
+    if (colorInput.value) {
+        const colorOption = document.querySelector(`.color-option[data-color="${colorInput.value}"]`);
+        if (colorOption) {
+            colorOption.classList.add('selected');
+        }
+    }
+});
+</script>
+{% endblock %}

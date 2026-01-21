@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if is_create %}{% trans "Yangi Kategoriya" %}{% else %}{% trans "Kategoriyani Tahrirlash" %}{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+    }
+    .icon-item {
+        padding: 15px;
+        text-align: center;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .icon-item:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+    .icon-item.selected {
+        background-color: #e7f1ff;
+        border-color: #0d6efd;
+    }
+    .icon-item i {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    .color-palette {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 5px;
+        margin-top: 10px;
+    }
+    .color-item {
+        width: 30px;
+        height: 30px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.2s ease;
+    }
+    .color-item:hover {
+        transform: scale(1.1);
+    }
+    .color-item.selected {
+        border-color: #000;
+        transform: scale(1.1);
+    }
+    .form-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 2rem;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'income:list' %}">
+                    <i class="fas fa-money-bill-wave me-1"></i>{% trans "Kirimlar" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'income:categories' %}">
+                    {% trans "Kategoriyalar" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if is_create %}
+                    {% trans "Yangi Kategoriya" %}
+                {% else %}
+                    {% trans "Tahrirlash" %}
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                        <i class="fas fa-folder-plus fa-2x text-primary"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="h2 mb-1 fw-bold">
+                        {% if is_create %}
+                            {% trans "Yangi Kategoriya Qo'shish" %}
+                        {% else %}
+                            {% trans "Kategoriyani Tahrirlash" %}
+                        {% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if is_create %}
+                            {% trans "Yangi kirim kategoriyasi yarating" %}
+                        {% else %}
+                            {% trans "Kategoriya ma'lumotlarini yangilang" %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'income:categories' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>{% trans "Orqaga" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-card">
+                <form method="post" id="categoryForm">
+                    {% csrf_token %}
+                    
+                    <!-- Name Field -->
+                    <div class="mb-4">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                            {{ form.name.label }} *
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            {% trans "Kategoriya nomini kiriting. Bu nom boshqa kategoriyalardan farq qilishi kerak." %}
+                        </div>
+                    </div>
+
+                    <!-- Icon Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{% trans "Ikonka" %} *</label>
+                        <input type="hidden" id="iconInput" name="icon" value="{{ form.icon.value|default:'fas fa-money-bill-wave' }}">
+                        
+                        <div class="icon-grid" id="iconGrid">
+                            <!-- Common icons -->
+                            {% with icons="fas fa-money-bill-wave fas fa-salary fas fa-briefcase fas fa-gift fas fa-chart-line fas fa-coins fas fa-hand-holding-usd fas fa-piggy-bank fas fa-university fas fa-credit-card fas fa-wallet fas fa-cash-register fas fa-tags fas fa-shopping-bag fas fa-store fas fa-building fas fa-home fas fa-car fas fa-bus fas fa-plane fas fa-graduation-cap fas fa-book fas fa-heart fas fa-stethoscope fas fa-utensils fas fa-mug-hot fas fa-film fas fa-music fas fa-gamepad fas fa-dumbbell fas fa-futbol" %}
+                                {% for icon in icons.split %}
+                                <div class="icon-item {% if form.icon.value == icon %}selected{% endif %}" 
+                                     data-icon="{{ icon }}">
+                                    <i class="{{ icon }}"></i>
+                                    <div class="small text-muted mt-1">{{ icon|slice:"7:" }}</div>
+                                </div>
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                        
+                        <!-- Custom Icon Input -->
+                        <div class="mt-3">
+                            <label class="form-label">{% trans "Maxsus ikonka" %}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">fas fa-</span>
+                                <input type="text" class="form-control" id="customIcon" 
+                                       placeholder="money-bill-wave">
+                            </div>
+                            <div class="form-text">
+                                {% trans "FontAwesome ikonka nomini kiriting (fa- dan keyingi qismi)" %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{% trans "Rang" %} *</label>
+                        <input type="hidden" id="colorInput" name="color" value="{{ form.color.value|default:'#3b82f6' }}">
+                        
+                        <div class="color-palette" id="colorPalette">
+                            <!-- Color options -->
+                            {% with colors="#3b82f6 #10b981 #f59e0b #ef4444 #8b5cf6 #06b6d4 #ec4899 #84cc16 #f97316 #6366f1 #14b8a6 #f43f5e #a855f7 #0ea5e9 #d946ef #22c55e #eab308 #84cc16 #f97316 #ef4444" %}
+                                {% for color in colors.split %}
+                                <div class="color-item {% if form.color.value == color %}selected{% endif %}" 
+                                     style="background-color: {{ color }};" 
+                                     data-color="{{ color }}"></div>
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                        
+                        <!-- Custom Color Input -->
+                        <div class="mt-3">
+                            <label class="form-label">{% trans "Maxsus rang" %}</label>
+                            <div class="input-group">
+                                <input type="color" class="form-control form-control-color" 
+                                       id="customColor" value="{{ form.color.value|default:'#3b82f6' }}">
+                                <input type="text" class="form-control" id="customColorText" 
+                                       value="{{ form.color.value|default:'#3b82f6' }}" 
+                                       placeholder="#3b82f6">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        <div class="form-text">
+                            {% trans "Kategoriya haqida qisqacha tavsif (ixtiyoriy)" %}
+                        </div>
+                    </div>
+
+                    <!-- Default Category -->
+                    {% if is_create %}
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isDefault" name="is_default">
+                            <label class="form-check-label" for="isDefault">
+                                {% trans "Standart kategoriya sifatida belgilash" %}
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            {% trans "Bu kategoriya barcha foydalanuvchilar uchun ko'rinadi" %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Preview -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">{% trans "Ko'rinish" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div id="previewIcon" class="me-3" 
+                                     style="color: {{ form.color.value|default:'#3b82f6' }}; font-size: 2rem;">
+                                    <i class="{{ form.icon.value|default:'fas fa-money-bill-wave' }}"></i>
+                                </div>
+                                <div>
+                                    <div id="previewName" class="fw-bold">{{ form.name.value|default:"Kategoriya nomi" }}</div>
+                                    <div id="previewColor" class="small text-muted">
+                                        {% trans "Rang" %}: <span id="previewColorValue">{{ form.color.value|default:'#3b82f6' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'income:categories' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>{% trans "Bekor qilish" %}
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            {% if is_create %}
+                                {% trans "Saqlash" %}
+                            {% else %}
+                                {% trans "Yangilash" %}
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Icon selection
+    $('.icon-item').click(function() {
+        $('.icon-item').removeClass('selected');
+        $(this).addClass('selected');
+        const icon = $(this).data('icon');
+        $('#iconInput').val(icon);
+        updatePreview();
+    });
+
+    // Custom icon input
+    $('#customIcon').on('input', function() {
+        const iconName = $(this).val().trim();
+        if (iconName) {
+            const icon = 'fas fa-' + iconName;
+            $('#iconInput').val(icon);
+            updatePreview();
+        }
+    });
+
+    // Color selection
+    $('.color-item').click(function() {
+        $('.color-item').removeClass('selected');
+        $(this).addClass('selected');
+        const color = $(this).data('color');
+        $('#colorInput').val(color);
+        $('#customColor').val(color);
+        $('#customColorText').val(color);
+        updatePreview();
+    });
+
+    // Custom color input
+    $('#customColor').change(function() {
+        const color = $(this).val();
+        $('#colorInput').val(color);
+        $('#customColorText').val(color);
+        updatePreview();
+    });
+
+    $('#customColorText').on('input', function() {
+        const color = $(this).val();
+        if (color.match(/^#[0-9A-Fa-f]{6}$/)) {
+            $('#colorInput').val(color);
+            $('#customColor').val(color);
+            updatePreview();
+        }
+    });
+
+    // Name input preview
+    $('#{{ form.name.id_for_label }}').on('input', function() {
+        $('#previewName').text($(this).val() || "Kategoriya nomi");
+    });
+
+    // Update preview function
+    function updatePreview() {
+        const icon = $('#iconInput').val();
+        const color = $('#colorInput').val();
+        
+        $('#previewIcon').html(`<i class="${icon}"></i>`);
+        $('#previewIcon').css('color', color);
+        $('#previewColorValue').text(color);
+    }
+
+    // Form validation
+    $('#categoryForm').submit(function(e) {
+        const name = $('#{{ form.name.id_for_label }}').val().trim();
+        if (!name) {
+            e.preventDefault();
+            alert('{% trans "Iltimos, kategoriya nomini kiriting!" %}');
+            return;
+        }
+        
+        if (name.length < 2) {
+            e.preventDefault();
+            alert('{% trans "Kategoriya nomi kamida 2 belgidan iborat bo\'lishi kerak!" %}');
+            return;
+        }
+    });
+
+    // Initialize preview
+    updatePreview();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load i18n %}
+
+{% block title %}{% trans "Kirim Tahlillari" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .analytics-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+    .metric-card {
+        border: none;
+        border-radius: 15px;
+        padding: 1.5rem;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .metric-change {
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+    .chart-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        padding: 1rem;
+    }
+    .insight-card {
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 1rem;
+    }
+    .trend-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .trend-up {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .trend-down {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+    .trend-neutral {
+        background-color: #e5e7eb;
+        color: #374151;
+    }
+    .comparison-badge {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+    }
+    .filter-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    .filter-tabs .nav-link.active {
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+        background: transparent;
+    }
+    .year-selector {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .year-selector .btn {
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="analytics-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb breadcrumb-light">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'income:list' %}" class="text-light">
+                                <i class="fas fa-money-bill-wave me-1"></i>{% trans "Kirimlar" %}
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'income:stats' %}" class="text-light">
+                                {% trans "Statistika" %}
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active text-light" aria-current="page">
+                            {% trans "Tahlillar" %}
+                        </li>
+                    </ol>
+                </nav>
+                
+                <h1 class="h2 mb-2">{% trans "Kirim Tahlillari" %}</h1>
+                <p class="mb-0 opacity-75">
+                    {% trans "Daromadlaringizning chuqur tahlili va prognozlari" %}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="year-selector">
+                    <select class="form-select" id="yearSelect" style="max-width: 150px;">
+                        {% for y in available_years %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Filter Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs filter-tabs" id="analyticsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#overview" type="button" role="tab">
+                                <i class="fas fa-chart-pie me-2"></i>{% trans "Umumiy ko'rinish" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="trends-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#trends" type="button" role="tab">
+                                <i class="fas fa-chart-line me-2"></i>{% trans "Trendlar" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="comparison-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#comparison" type="button" role="tab">
+                                <i class="fas fa-balance-scale me-2"></i>{% trans "Taqqoslash" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="forecast-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#forecast" type="button" role="tab">
+                                <i class="fas fa-crystal-ball me-2"></i>{% trans "Prognoz" %}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="analyticsTabsContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <!-- Key Metrics -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="metric-card text-center">
+                        <div class="metric-value text-primary">
+                            {{ yearly_comparison.2.total|default:0|floatformat:0|intcomma }}
+                        </div>
+                        <div class="metric-label">{% trans "Joriy Yil" %}</div>
+                        {% with change=yearly_comparison.2.total|default:0 yearly_comparison.1.total|default:0 %}
+                            {% if change > 0 %}
+                            <div class="metric-change trend-up">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                {{ change|floatformat:1 }}% {% trans "o'sish" %}
+                            </div>
+                            {% elif change < 0 %}
+                            <div class="metric-change trend-down">
+                                <i class="fas fa-arrow-down me-1"></i>
+                                {{ change|abs|floatformat:1 }}% {% trans "pasayish" %}
+                            </div>
+                            {% else %}
+                            <div class="metric-change trend-neutral">
+                                <i class="fas fa-minus me-1"></i>
+                                {% trans "O'zgarmadi" %}
+                            </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6">
+                    <div class="metric-card text-center">
+                        <div class="metric-value text-success">
+                            {{ monthly_analysis_total|default:0|floatformat:0|intcomma }}
+                        </div>
+                        <div class="metric-label">{% trans "Bu Oy" %}</div>
+                        <div class="metric-change text-success">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            {{ monthly_analysis_count|default:0 }} {% trans "ta operatsiya" %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6">
+                    <div class="metric-card text-center">
+                        <div class="metric-value text-warning">
+                            {{ forecast|default:0|floatformat:0|intcomma }}
+                        </div>
+                        <div class="metric-label">{% trans "Yillik Prognoz" %}</div>
+                        {% with progress=monthly_analysis_total|default:0 forecast=forecast|default:1 %}
+                            <div class="metric-change">
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" 
+                                         style="width: {{ progress|div:forecast|mul:100 }}%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    {{ progress|div:forecast|mul:100|floatformat:1 }}% {% trans "bajarildi" %}
+                                </small>
+                            </div>
+                        {% endwith %}
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6">
+                    <div class="metric-card text-center">
+                        <div class="metric-value text-info">
+                            {{ avg_monthly|default:0|floatformat:0|intcomma }}
+                        </div>
+                        <div class="metric-label">{% trans "O'rtacha Oylik" %}</div>
+                        <div class="metric-change">
+                            <span class="badge bg-info">
+                                {{ months_passed|default:0 }}/12 {% trans "oy" %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Analysis Chart -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                {% trans "Oylik Tahlil" %} ({{ year }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="monthlyAnalysisChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Growth -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-seedling me-2"></i>
+                                {% trans "Kategoriyalar O'sishi" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="categoryGrowthChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="chart-card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bullseye me-2"></i>
+                                {% trans "Maqsadlar Holati" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if active_goals %}
+                            <div class="d-flex flex-column gap-3">
+                                {% for goal in active_goals %}
+                                <div>
+                                    <div class="

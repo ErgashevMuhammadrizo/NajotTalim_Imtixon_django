@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Byudjetlar" %} | Kirim-Chiqim{% endblock %}
+
+{% block extra_css %}
+<style>
+.budget-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+}
+
+.budget-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.budget-category {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.category-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.category-name {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.category-period {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.budget-amounts {
+    text-align: right;
+}
+
+.total-budget {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.period-info {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.budget-progress {
+    margin: 25px 0;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.progress-label {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.progress-percentage {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.budget-alert {
+    background: #fef3c7;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    border-left: 4px solid #f59e0b;
+    display: none;
+}
+
+.budget-alert.show {
+    display: block;
+}
+
+.budget-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-2">{% trans "Byudjetlar" %}</h1>
+            <p class="text-muted mb-0">{% trans "Chiqimlaringizni nazorat qilish uchun byudjetlar" %}</p>
+        </div>
+        <div>
+            <a href="{% url 'expenses:budget_create' %}" class="btn btn-danger">
+                <i class="fas fa-plus me-2"></i>{% trans "Yangi byudjet" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">{% trans "Faol byudjetlar" %}</h5>
+                    <h2 class="card-text">{{ budgets|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">{% trans "Byudjetdan oshganlar" %}</h5>
+                    <h2 class="card-text text-danger" id="overBudgetCount">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">{% trans "Ogohlantirishlar" %}</h5>
+                    <h2 class="card-text text-warning" id="alertCount">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budgets List -->
+    {% if budgets %}
+    <div class="row">
+        {% for budget in budgets %}
+        <div class="col-12">
+            <div class="budget-card" data-budget-id="{{ budget.id }}">
+                <div class="budget-header">
+                    <div class="budget-category">
+                        <div class="category-icon" style="background: {{ budget.category.color }};">
+                            <i class="{{ budget.category.icon }}"></i>
+                        </div>
+                        <div>
+                            <div class="category-name">{{ budget.category.name }}</div>
+                            <div class="category-period">{{ budget.get_period_display }}</div>
+                        </div>
+                    </div>
+                    <div class="budget-amounts">
+                        <div class="total-budget">{{ budget.amount|intcomma }} {{ budget.currency }}</div>
+                        <div class="period-info">
+                            {{ budget.start_date|date:"d.m.Y" }}
+                            {% if budget.end_date %}
+                            - {{ budget.end_date|date:"d.m.Y" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="budget-progress">
+                    <div class="progress-header">
+                        <div class="progress-label">{% trans "Sarflangan" %}</div>
+                        <div class="progress-percentage">{{ budget.usage_percentage|floatformat:1 }}%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" 
+                             style="width: {% if budget.usage_percentage > 100 %}100{% else %}{{ budget.usage_percentage }}{% endif %}%; 
+                                    background: {% if budget.usage_percentage >= 100 %}#ef4444{% elif budget.usage_percentage >= 80 %}#f59e0b{% else %}#10b981{% endif %};">
+                        </div>
+                    </div>
+                    <div class="progress-info">
+                        <span>{{ budget.spent_amount|intcomma }} {{ budget.currency }}</span>
+                        <span>{{ budget.remaining_amount|intcomma }} {{ budget.currency }} {% trans "qoldi" %}</span>
+                    </div>
+                </div>
+
+                <!-- Alert -->
+                {% if budget.should_alert %}
+                <div class="budget-alert show">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle text-warning me-3"></i>
+                        <div>
+                            <strong>{% trans "Ogohlantirish!" %}</strong>
+                            <p class="mb-0">
+                                {% trans "Byudjetning" %} {{ budget.alert_threshold }}% 
+                                {% trans "dan ko'p foydalanildi. Ehtiyot bo'ling!" %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="budget-actions">
+                    <a href="{% url 'expenses:list' %}?category={{ budget.category.id }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>{% trans "Chiqimlar" %}
+                    </a>
+                    <a href="{% url 'expenses:budget_update' budget.id %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-edit me-1"></i>{% trans "Tahrirlash" %}
+                    </a>
+                    <a href="{% url 'expenses:budget_delete' budget.id %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash me-1"></i>{% trans "O'chirish" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-chart-pie empty-icon"></i>
+        <h3 class="mb-3">{% trans "Byudjetlar topilmadi" %}</h3>
+        <p class="text-muted mb-4">{% trans "Hozircha byudjetlar mavjud emas. Birinchi byudjetingizni yarating va chiqimlaringizni nazorat qiling." %}</p>
+        <a href="{% url 'expenses:budget_create' %}" class="btn btn-danger btn-lg">
+            <i class="fas fa-plus me-2"></i>{% trans "Birinchi byudjet yaratish" %}
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate stats
+    let overBudgetCount = 0;
+    let alertCount = 0;
+    
+    document.querySelectorAll('.budget-card').forEach(card => {
+        const percentage = parseFloat(card.querySelector('.progress-percentage').textContent);
+        
+        if (percentage >= 100) {
+            overBudgetCount++;
+        }
+        
+        const alertDiv = card.querySelector('.budget-alert.show');
+        if (alertDiv) {
+            alertCount++;
+        }
+    });
+    
+    // Update stats
+    document.getElementById('overBudgetCount').textContent = overBudgetCount;
+    document.getElementById('alertCount').textContent = alertCount;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard API Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Dashboard API Test</h1>
+    <div id="results" style="font-family: monospace; white-space: pre-wrap; padding: 20px; background: #f5f5f5; border-radius: 5px;"></div>
+
+    <script>
+        const results = $('#results');
+        
+        function log(msg) {
+            results.append(msg + '\n');
+            console.log(msg);
+        }
+        
+        async function testAPIs() {
+            log('Starting API tests...\n');
+            
+            // Get language prefix
+            const pathparts = window.location.pathname.split('/').filter(p => p);
+            const langPrefix = ['en', 'uz', 'ru'].includes(pathparts[0]) ? '/' + pathparts[0] : '';
+            log(`Language Prefix: "${langPrefix}"\n`);
+            
+            // Test summary API
+            try {
+                log('Testing dashboard/summary API...');
+                const url1 = `${langPrefix}/expenses/api/dashboard/summary/?currency=UZS`;
+                log(`URL: ${url1}`);
+                
+                const resp1 = await fetch(url1);
+                log(`Status: ${resp1.status}`);
+                
+                if (resp1.ok) {
+                    const data1 = await resp1.json();
+                    log(`Response: ${JSON.stringify(data1, null, 2)}\n`);
+                } else {
+                    log(`Error: ${resp1.status} ${resp1.statusText}\n`);
+                }
+            } catch (e) {
+                log(`Exception: ${e.message}\n`);
+            }
+            
+            // Test chart API
+            try {
+                log('Testing dashboard/chart-data API...');
+                const url2 = `${langPrefix}/expenses/api/dashboard/chart-data/?period=7&currency=UZS`;
+                log(`URL: ${url2}`);
+                
+                const resp2 = await fetch(url2);
+                log(`Status: ${resp2.status}`);
+                
+                if (resp2.ok) {
+                    const data2 = await resp2.json();
+                    log(`Labels: ${data2.labels.length} items`);
+                    log(`Income data: ${data2.income_data.length} points`);
+                    log(`Expense data: ${data2.expense_data.length} points\n`);
+                } else {
+                    log(`Error: ${resp2.status} ${resp2.statusText}\n`);
+                }
+            } catch (e) {
+                log(`Exception: ${e.message}\n`);
+            }
+            
+            // Test category API
+            try {
+                log('Testing dashboard/category-stats API...');
+                const url3 = `${langPrefix}/expenses/api/dashboard/category-stats/?period=month&currency=UZS`;
+                log(`URL: ${url3}`);
+                
+                const resp3 = await fetch(url3);
+                log(`Status: ${resp3.status}`);
+                
+                if (resp3.ok) {
+                    const data3 = await resp3.json();
+                    log(`Categories: ${data3.length} items`);
+                    log(`Response: ${JSON.stringify(data3, null, 2)}\n`);
+                } else {
+                    log(`Error: ${resp3.status} ${resp3.statusText}\n`);
+                }
+            } catch (e) {
+                log(`Exception: ${e.message}\n`);
+            }
+        }
+        
+        $(document).ready(function() {
+            log('DOM Ready - Starting tests...\n');
+            testAPIs();
+        });
+    </script>
+</body>
+</html>

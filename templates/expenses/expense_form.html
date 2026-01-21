@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if is_create %}{% trans "Yangi chiqim" %}{% else %}{% trans "Chiqimni tahrirlash" %}{% endif %} | Kirim-Chiqim
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.form-header h1 {
+    color: #1e293b;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.form-header p {
+    color: #64748b;
+}
+
+.required-field::after {
+    content: " *";
+    color: #ef4444;
+}
+
+.currency-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.currency-option {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.currency-option:hover {
+    border-color: #cbd5e1;
+}
+
+.currency-option.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Form Card -->
+    <div class="form-card">
+        <div class="form-header">
+            <h1>
+                {% if is_create %}
+                <i class="fas fa-plus-circle text-danger me-2"></i>{% trans "Yangi chiqim" %}
+                {% else %}
+                <i class="fas fa-edit text-primary me-2"></i>{% trans "Chiqimni tahrirlash" %}
+                {% endif %}
+            </h1>
+            <p class="mb-0">
+                {% if is_create %}
+                {% trans "Yangi chiqim qo'shish uchun maydonlarni to'ldiring" %}
+                {% else %}
+                {% trans "Chiqim ma'lumotlarini o'zgartiring" %}
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p class="mb-0">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Amount and Currency -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <label class="form-label required-field">{% trans "Summa" %}</label>
+                    <div class="input-group">
+                        {{ form.amount }}
+                        <span class="input-group-text" id="currency-display">UZS</span>
+                    </div>
+                    {% if form.amount.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.amount.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label required-field">{% trans "Valyuta" %}</label>
+                    {{ form.currency }}
+                    {% if form.currency.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.currency.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Category -->
+            <div class="mb-4">
+                <label class="form-label required-field">{% trans "Kategoriya" %}</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.category.errors }}
+                </div>
+                {% endif %}
+                <div class="mt-2">
+                    <a href="{% url 'expenses:category_create' %}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-plus me-1"></i>{% trans "Yangi kategoriya qo'shish" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div class="mb-4">
+                <label class="form-label required-field">{% trans "Sana" %}</label>
+                {{ form.date }}
+                {% if form.date.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.date.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Izoh" %}</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.description.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {% trans "Chiqim haqida qo'shimcha ma'lumot (majburiy emas)" %}
+                </div>
+            </div>
+
+            <!-- Payment Method and Location -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "To'lov usuli" %}</label>
+                    {{ form.payment_method }}
+                    {% if form.payment_method.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.payment_method.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Manzil" %}</label>
+                    {{ form.location }}
+                    {% if form.location.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.location.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Receipt Image -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Chek rasmi" %}</label>
+                {{ form.receipt_image }}
+                {% if form.receipt_image.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.receipt_image.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {% trans "JPG, PNG yoki PDF formatida (maksimal 5MB)" %}
+                </div>
+                
+                {% if not is_create and expense.receipt_image %}
+                <div class="mt-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted">{% trans "Mavjud fayl:" %}</span>
+                        <a href="{{ expense.receipt_image.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>{% trans "Ko'rish" %}
+                        </a>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="clear_receipt_image" id="clear_receipt_image">
+                            <label class="form-check-label text-muted" for="clear_receipt_image">
+                                {% trans "Faylni o'chirish" %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tags -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Teglar" %}</label>
+                {{ form.tags }}
+                {% if form.tags.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.tags.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {% trans "Chiqimni tasniflash uchun teglar (bir nechtasini tanlash mumkin)" %}
+                </div>
+            </div>
+
+            <!-- Hidden fields -->
+            {{ form.exchange_rate }}
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if is_create %}
+                    <i class="fas fa-save me-2"></i>{% trans "Saqlash" %}
+                    {% else %}
+                    <i class="fas fa-sync me-2"></i>{% trans "Yangilash" %}
+                    {% endif %}
+                </button>
+                <a href="{% if not is_create %}{% url 'expenses:detail' expense.id %}{% else %}{% url 'expenses:list' %}{% endif %}" 
+                   class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>{% trans "Bekor qilish" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Currency selection
+    const currencySelect = document.querySelector('#id_currency');
+    const currencyDisplay = document.querySelector('#currency-display');
+    
+    function updateCurrencyDisplay() {
+        currencyDisplay.textContent = currencySelect.value;
+    }
+    
+    currencySelect.addEventListener('change', updateCurrencyDisplay);
+    updateCurrencyDisplay();
+    
+    // Auto currency rate based on selection (example)
+    const exchangeRateField = document.querySelector('#id_exchange_rate');
+    currencySelect.addEventListener('change', function() {
+        // Bu yerda API orqali valyuta kursini olish mumkin
+        const rates = {
+            'UZS': 1,
+            'USD': 12500, // Misol uchun
+            'EUR': 13500, // Misol uchun
+            'RUB': 140,   // Misol uchun
+        };
+        exchangeRateField.value = rates[this.value] || 1;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Chiqim tafsilotlari" %} | Kirim-Chiqim{% endblock %}
+
+{% block extra_css %}
+<style>
+.detail-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.detail-header {
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.amount-badge {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ef4444;
+    background: #fef2f2;
+    padding: 10px 20px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.detail-row {
+    display: flex;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-label {
+    width: 200px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.detail-value {
+    flex: 1;
+    color: #1e293b;
+}
+
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: #f8fafc;
+    border-radius: 20px;
+    color: #475569;
+}
+
+.payment-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: #eff6ff;
+    border-radius: 6px;
+    color: #1d4ed8;
+    font-weight: 500;
+}
+
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag-badge {
+    padding: 4px 12px;
+    background: #f3f4f6;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.receipt-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'expenses:list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>{% trans "Chiqimlar ro'yxatiga qaytish" %}
+        </a>
+    </div>
+
+    <!-- Expense Detail Card -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="h3 mb-3">{% trans "Chiqim tafsilotlari" %}</h1>
+                    <div class="amount-badge">
+                        -{{ expense.amount|intcomma }} {{ expense.currency }}
+                        {% if expense.currency != 'UZS' %}
+                        <small class="text-muted ms-2">(≈{{ expense.amount_in_uzs|intcomma }} UZS)</small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="text-muted mb-2">{{ expense.date }}</div>
+                    <div class="small text-muted">{{ expense.time|time:"H:i" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Category -->
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Kategoriya" %}</div>
+                    <div class="detail-value">
+                        {% if expense.category %}
+                        <span class="category-badge" style="color: {{ expense.category.color }}; background: {{ expense.category.color }}20;">
+                            {% if expense.category.icon %}
+                            <i class="{{ expense.category.icon }}"></i>
+                            {% endif %}
+                            {{ expense.category.name }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">{% trans "Kategoriyasi yo'q" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Description -->
+                {% if expense.description %}
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Izoh" %}</div>
+                    <div class="detail-value">
+                        {{ expense.description|linebreaksbr }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Payment Method -->
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "To'lov usuli" %}</div>
+                    <div class="detail-value">
+                        <span class="payment-badge">{{ expense.get_payment_method_display }}</span>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                {% if expense.location %}
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Manzil" %}</div>
+                    <div class="detail-value">
+                        <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                        {{ expense.location }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <!-- Currency Info -->
+                {% if expense.currency != 'UZS' %}
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Valyuta kursi" %}</div>
+                    <div class="detail-value">
+                        1 {{ expense.currency }} = {{ expense.exchange_rate }} UZS
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Tags -->
+                {% if expense.tags.all %}
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Teglar" %}</div>
+                    <div class="detail-value">
+                        <div class="tags-container">
+                            {% for tag in expense.tags.all %}
+                            <span class="tag-badge" style="background: {{ tag.color }}20; color: {{ tag.color }};">
+                                {{ tag.name }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Status -->
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Status" %}</div>
+                    <div class="detail-value">
+                        {% if expense.is_verified %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>{% trans "Tasdiqlangan" %}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock me-1"></i>{% trans "Kutilmoqda" %}
+                        </span>
+                        {% endif %}
+                        
+                        {% if expense.needs_review %}
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-exclamation-circle me-1"></i>{% trans "Ko'rib chiqish kerak" %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Created/Updated -->
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Yaratilgan" %}</div>
+                    <div class="detail-value">
+                        {{ expense.created_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">{% trans "Yangilangan" %}</div>
+                    <div class="detail-value">
+                        {{ expense.updated_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receipt Image -->
+        {% if expense.receipt_image %}
+        <div class="detail-row">
+            <div class="detail-label">{% trans "Chek rasmi" %}</div>
+            <div class="detail-value">
+                <a href="{{ expense.receipt_image.url }}" target="_blank">
+                    <img src="{{ expense.receipt_image.url }}" alt="Chek rasmi" class="receipt-image">
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{% url 'expenses:update' expense.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>{% trans "Tahrirlash" %}
+            </a>
+            <a href="{% url 'expenses:delete' expense.id %}" class="btn btn-danger">
+                <i class="fas fa-trash me-2"></i>{% trans "O'chirish" %}
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="fas fa-print me-2"></i>{% trans "Chop etish" %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,835 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if is_create %}{% trans "Yangi Kirim Qo'shish" %}{% else %}{% trans "Kirimni Tahrirlash" %}{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+<style>
+    .section-title {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: #495057;
+        font-weight: 600;
+    }
+    .form-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background: #fff;
+    }
+    .icon-preview {
+        font-size: 1.5rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-right: 10px;
+    }
+    .color-preview {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        margin-right: 10px;
+        border: 1px solid #dee2e6;
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .form-section {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .recurring-options {
+        transition: all 0.3s ease;
+    }
+    .tax-options {
+        transition: all 0.3s ease;
+    }
+    .attachment-preview {
+        max-width: 200px;
+        max-height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'income:list' %}">
+                    <i class="fas fa-money-bill-wave me-1"></i>{% trans "Kirimlar" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if is_create %}
+                    {% trans "Yangi Kirim" %}
+                {% else %}
+                    {% trans "Tahrirlash" %}
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                        <i class="fas fa-plus-circle fa-2x text-primary"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="h2 mb-1 fw-bold">
+                        {% if is_create %}
+                            {% trans "Yangi Kirim Qo'shish" %}
+                        {% else %}
+                            {% trans "Kirimni Tahrirlash" %}
+                        {% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if is_create %}
+                            {% trans "Yangi daromad operatsiyangizni kiriting" %}
+                        {% else %}
+                            {% trans "Kirim ma'lumotlarini tahrirlang" %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'income:list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>{% trans "Orqaga" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <ul class="nav nav-tabs card-header-tabs" id="incomeTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#basic" type="button" role="tab">
+                                <i class="fas fa-info-circle me-2"></i>{% trans "Asosiy" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="details-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#details" type="button" role="tab">
+                                <i class="fas fa-list me-2"></i>{% trans "Qo'shimcha" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#advanced" type="button" role="tab">
+                                <i class="fas fa-cog me-2"></i>{% trans "Ilg'or" %}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="incomeForm" 
+                          novalidate autocomplete="off">
+                        {% csrf_token %}
+                        
+                        <div class="tab-content" id="incomeTabsContent">
+                            <!-- Basic Tab -->
+                            <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                <!-- Amount & Currency -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.amount.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.amount.label }}
+                                        </label>
+                                        <div class="input-group">
+                                            {{ form.amount }}
+                                            <span class="input-group-text">
+                                                <i class="fas fa-money-bill-wave"></i>
+                                            </span>
+                                        </div>
+                                        {% if form.amount.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.amount.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            {% trans "Kirim miqdorini kiriting" %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.currency.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.currency.label }}
+                                        </label>
+                                        {{ form.currency }}
+                                        {% if form.currency.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.currency.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Category & Source -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.category.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.category.label }}
+                                        </label>
+                                        {{ form.category }}
+                                        {% if form.category.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.category.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="mt-2">
+                                            <a href="{% url 'income:category_create' %}" 
+                                               class="small" target="_blank">
+                                                <i class="fas fa-plus-circle me-1"></i>
+                                                {% trans "Yangi kategoriya qo'shish" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.source.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.source.label }}
+                                        </label>
+                                        <div class="input-group">
+                                            {{ form.source }}
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                    onclick="openSourceModal()">
+                                                <i class="fas fa-bookmark"></i>
+                                            </button>
+                                        </div>
+                                        {% if form.source.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.source.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <datalist id="source-suggestions">
+                                            {% for source in sources %}
+                                            <option value="{{ source }}">
+                                            {% endfor %}
+                                        </datalist>
+                                    </div>
+                                </div>
+                                
+                                <!-- Source Object -->
+                                <div class="row mb-4">
+                                    <div class="col-md-12">
+                                        <label for="{{ form.source_obj.id_for_label }}" 
+                                               class="form-label">
+                                            {{ form.source_obj.label }}
+                                        </label>
+                                        {{ form.source_obj }}
+                                        {% if form.source_obj.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.source_obj.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            {% trans "Agar manbani saqlab qo'ymoqchi bo'lsangiz, tanlang" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Payment Method -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.payment_method.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.payment_method.label }}
+                                        </label>
+                                        {{ form.payment_method }}
+                                        {% if form.payment_method.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.payment_method.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.status.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.status.label }}
+                                        </label>
+                                        {{ form.status }}
+                                        {% if form.status.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.status.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Details Tab -->
+                            <div class="tab-pane fade" id="details" role="tabpanel">
+                                <!-- Date & Time -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.date.id_for_label }}" 
+                                               class="form-label required-field">
+                                            {{ form.date.label }}
+                                        </label>
+                                        {{ form.date }}
+                                        {% if form.date.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.date.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.time.id_for_label }}" 
+                                               class="form-label">
+                                            {{ form.time.label }}
+                                        </label>
+                                        {{ form.time }}
+                                        {% if form.time.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.time.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Description -->
+                                <div class="row mb-4">
+                                    <div class="col-md-12">
+                                        <label for="{{ form.description.id_for_label }}" 
+                                               class="form-label">
+                                            {{ form.description.label }}
+                                        </label>
+                                        {{ form.description }}
+                                        {% if form.description.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.description.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            {% trans "Qo'shimcha ma'lumot yoki izoh" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tags -->
+                                <div class="row mb-4">
+                                    <div class="col-md-12">
+                                        <label for="{{ form.tags.id_for_label }}" 
+                                               class="form-label">
+                                            {{ form.tags.label }}
+                                        </label>
+                                        {{ form.tags }}
+                                        {% if form.tags.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.tags.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            {% trans "Teglarni guruhlash uchun. Bir nechta tanlash mumkin." %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Attachment -->
+                                <div class="row mb-4">
+                                    <div class="col-md-12">
+                                        <label for="{{ form.attachment.id_for_label }}" 
+                                               class="form-label">
+                                            {{ form.attachment.label }}
+                                        </label>
+                                        {{ form.attachment }}
+                                        {% if form.attachment.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.attachment.errors }}
+                                        </div>
+                                        {% endif %}
+                                        {% if income and income.attachment %}
+                                        <div class="mt-2">
+                                            <div class="alert alert-info d-flex align-items-center" role="alert">
+                                                <i class="fas fa-paperclip me-2"></i>
+                                                <div>
+                                                    <strong>{% trans "Mavjud fayl:" %}</strong>
+                                                    <a href="{{ income.attachment.url }}" target="_blank" 
+                                                       class="ms-2">
+                                                        {{ income.attachment_name }}
+                                                    </a>
+                                                    <br>
+                                                    <small>
+                                                        <input type="checkbox" id="remove_attachment" 
+                                                               name="remove_attachment">
+                                                        <label for="remove_attachment" class="ms-1">
+                                                            {% trans "Faylni o'chirish" %}
+                                                        </label>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Advanced Tab -->
+                            <div class="tab-pane fade" id="advanced" role="tabpanel">
+                                <!-- Tax Options -->
+                                <div class="form-section tax-options mb-4">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-percentage me-2"></i>
+                                        {% trans "Soliq Sozlamalari" %}
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mb-3">
+                                                {{ form.is_taxable }}
+                                                <label class="form-check-label" 
+                                                       for="{{ form.is_taxable.id_for_label }}">
+                                                    {{ form.is_taxable.label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.tax_amount.id_for_label }}" 
+                                                   class="form-label">
+                                                {{ form.tax_amount.label }}
+                                            </label>
+                                            {{ form.tax_amount }}
+                                            {% if form.tax_amount.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {{ form.tax_amount.errors }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="form-text">
+                                        {% trans "Agar kirim soliqqa tortilsa, miqdori bu yerda ko'rsatiladi" %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Recurring Options -->
+                                <div class="form-section recurring-options mb-4">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-redo me-2"></i>
+                                        {% trans "Takrorlanish Sozlamalari" %}
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mb-3">
+                                                {{ form.is_recurring }}
+                                                <label class="form-check-label" 
+                                                       for="{{ form.is_recurring.id_for_label }}">
+                                                    {{ form.is_recurring.label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.next_occurrence.id_for_label }}" 
+                                                   class="form-label">
+                                                {{ form.next_occurrence.label }}
+                                            </label>
+                                            {{ form.next_occurrence }}
+                                            {% if form.next_occurrence.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {{ form.next_occurrence.errors }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="recurrenceSettings" style="display: none;">
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    {% trans "Takrorlanish turi" %}
+                                                </label>
+                                                <select class="form-control" name="recurrence_type" 
+                                                        id="recurrence_type">
+                                                    <option value="daily">{% trans "Har kuni" %}</option>
+                                                    <option value="weekly">{% trans "Har hafta" %}</option>
+                                                    <option value="monthly" selected>{% trans "Har oy" %}</option>
+                                                    <option value="yearly">{% trans "Har yil" %}</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    {% trans "Interval" %}
+                                                </label>
+                                                <input type="number" class="form-control" 
+                                                       name="recurrence_interval" id="recurrence_interval" 
+                                                       value="1" min="1">
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                {% trans "Takrorlanish patterni JSON formatida saqlanadi" %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Transfer -->
+                                <div class="form-section mb-4">
+                                    <div class="form-check form-switch">
+                                        {{ form.is_transfer }}
+                                        <label class="form-check-label" 
+                                               for="{{ form.is_transfer.id_for_label }}">
+                                            {{ form.is_transfer.label }}
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        {% trans "Agar bu hisoblar orasidagi o'tkazma bo'lsa, belgilang" %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <a href="{% url 'income:list' %}" 
+                                           class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-2"></i>{% trans "Bekor qilish" %}
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>
+                                            {% if is_create %}
+                                                {% trans "Saqlash" %}
+                                            {% else %}
+                                                {% trans "Yangilash" %}
+                                            {% endif %}
+                                        </button>
+                                        {% if not is_create %}
+                                        <a href="{% url 'income:delete' income.uuid %}" 
+                                           class="btn btn-outline-danger ms-2">
+                                            <i class="fas fa-trash me-2"></i>{% trans "O'chirish" %}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Templates Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>{% trans "Shablonlar" %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if templates %}
+                    <div class="list-group list-group-flush">
+                        {% for template in templates %}
+                        <a href="{% url 'income:create' %}?template={{ template.id }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ template.name }}</h6>
+                                    <small class="text-muted">
+                                        {{ template.amount }} {{ template.get_currency_display }}
+                                    </small>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-clipboard fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">{% trans "Hozircha shablonlar mavjud emas" %}</p>
+                        <a href="{% url 'income:create' %}" class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="fas fa-plus me-1"></i>{% trans "Yangi shablon" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Tips -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>{% trans "Foydali maslahatlar" %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>{% trans "Manbani aniq kiriting" %}</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>{% trans "Teglar yordamida guruhlash osonroq" %}</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>{% trans "Takrorlanuvchi kirimlarni belgilang" %}</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>{% trans "Chek yoki shartnomani biriktiring" %}</small>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small>{% trans "Soliq miqdorini to'g'ri kiriting" %}</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Source Modal (for creating new source) -->
+<div class="modal fade" id="sourceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-building me-2"></i>{% trans "Yangi Manba Qo'shish" %}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sourceForm">
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "Manba nomi" %} *</label>
+                        <input type="text" class="form-control" id="newSourceName" 
+                               placeholder='{% trans "Masalan: Kompaniya XYZ" %}' required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "Tavsif (ixtiyoriy)" %}</label>
+                        <textarea class="form-control" id="newSourceDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Bekor qilish" %}
+                </button>
+                <button type="button" class="btn btn-primary" id="saveSourceBtn">
+                    <i class="fas fa-save me-2"></i>{% trans "Saqlash" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        placeholder: "{% trans 'Tanlang...' %}",
+        allowClear: true
+    });
+    
+    $('.select2-multiple').select2({
+        theme: 'bootstrap-5',
+        placeholder: "{% trans 'Tanlang...' %}",
+        allowClear: true
+    });
+    
+    // Tax toggle
+    $('#{{ form.is_taxable.id_for_label }}').change(function() {
+        const taxAmountField = $('#{{ form.tax_amount.id_for_label }}');
+        if ($(this).is(':checked')) {
+            taxAmountField.prop('readonly', false);
+            taxAmountField.closest('.col-md-6').slideDown();
+        } else {
+            taxAmountField.prop('readonly', true);
+            taxAmountField.val('0');
+            taxAmountField.closest('.col-md-6').slideUp();
+        }
+    });
+    
+    // Trigger tax toggle on load
+    $('#{{ form.is_taxable.id_for_label }}').trigger('change');
+    
+    // Recurring toggle
+    $('#{{ form.is_recurring.id_for_label }}').change(function() {
+        const recurringSettings = $('#recurrenceSettings');
+        if ($(this).is(':checked')) {
+            recurringSettings.slideDown();
+            $('#{{ form.next_occurrence.id_for_label }}').closest('.col-md-6').slideDown();
+        } else {
+            recurringSettings.slideUp();
+            $('#{{ form.next_occurrence.id_for_label }}').closest('.col-md-6').slideUp();
+        }
+    });
+    
+    // Trigger recurring toggle on load
+    $('#{{ form.is_recurring.id_for_label }}').trigger('change');
+    
+    // Source modal
+    window.openSourceModal = function() {
+        $('#sourceModal').modal('show');
+    };
+    
+    // Save source
+    $('#saveSourceBtn').click(function() {
+        const name = $('#newSourceName').val();
+        const description = $('#newSourceDescription').val();
+        
+        if (!name) {
+            alert('{% trans "Manba nomini kiriting!" %}');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "income:source_create" %}',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({
+                name: name,
+                description: description
+            }),
+            success: function(response) {
+                if (response.success) {
+                    // Add to select
+                    const $select = $('#{{ form.source_obj.id_for_label }}');
+                    const newOption = new Option(name, response.source.id, true, true);
+                    $select.append(newOption).trigger('change');
+                    
+                    // Close modal
+                    $('#sourceModal').modal('hide');
+                    $('#newSourceName').val('');
+                    $('#newSourceDescription').val('');
+                    
+                    // Show success message
+                    showToast('{% trans "Manba muvaffaqiyatli qo'shildi!" %}', 'success');
+                }
+            }
+        });
+    });
+    
+    // Calculate net amount
+    $('#{{ form.amount.id_for_label }}, #{{ form.tax_amount.id_for_label }}').on('input', function() {
+        calculateNetAmount();
+    });
+    
+    function calculateNetAmount() {
+        const amount = parseFloat($('#{{ form.amount.id_for_label }}').val()) || 0;
+        const tax = parseFloat($('#{{ form.tax_amount.id_for_label }}').val()) || 0;
+        const net = amount - tax;
+        
+        $('#netAmountDisplay').text(net.toFixed(2));
+    }
+    
+    // Initialize net amount calculation
+    calculateNetAmount();
+    
+    // Form validation
+    $('#incomeForm').submit(function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        const amount = $('#{{ form.amount.id_for_label }}').val();
+        const category = $('#{{ form.category.id_for_label }}').val();
+        const source = $('#{{ form.source.id_for_label }}').val();
+        
+        if (!amount || parseFloat(amount) <= 0) {
+            showToast('{% trans "Iltimos, to'g'ri miqdor kiriting!" %}', 'error');
+            return;
+        }
+        
+        if (!category) {
+            showToast('{% trans "Iltimos, kategoriya tanlang!" %}', 'error');
+            return;
+        }
+        
+        if (!source) {
+            showToast('{% trans "Iltimos, manba kiriting!" %}', 'error');
+            return;
+        }
+        
+        // Submit form
+        this.submit();
+    });
+    
+    // Auto-complete source
+    $('#{{ form.source.id_for_label }}').on('input', function() {
+        const query = $(this).val();
+        if (query.length >= 2) {
+            $.get('{% url "income:get_autocomplete_sources" %}?q=' + encodeURIComponent(query), 
+                function(data) {
+                    $('#source-suggestions').empty();
+                    data.sources.forEach(function(source) {
+                        $('#source-suggestions').append(
+                            `<option value="${source}">`
+                        );
+                    });
+                });
+        }
+    });
+    
+    // Helper functions
+    function showToast(message, type = 'success') {
+        // Create toast dynamically
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" 
+                 role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                            data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        $('.toast-container').append(toastHtml);
+        const toast = new bootstrap.Toast($('#' + toastId)[0]);
+        toast.show();
+        
+        // Remove after hide
+        $('#' + toastId).on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+});
+</script>
+{% endblock %}

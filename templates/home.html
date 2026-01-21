@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Kirim-Chiqim - Moliyangizni boshqaring" %}{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <h1 class="display-4 fw-bold mb-4">
+                    {% trans "Moliyangizni" %} <span class="text-primary">{% trans "Boshqaring" %}</span>
+                </h1>
+                <p class="lead mb-4">
+                    {% trans "Kirim va chiqimlaringizni kuzatish, byudjet rejalashtirish va moliyaviy maqsadlarga erishishning eng oson usuli." %}
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-tachometer-alt me-2"></i> {% trans "Dashboard" %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-user-plus me-2"></i> {% trans "Boshlash" %}
+                        </a>
+                        <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-lg px-4">
+                            <i class="fas fa-sign-in-alt me-2"></i> {% trans "Kirish" %}
+                        </a>
+                    {% endif %}
+                    <a href="#features" class="btn btn-link btn-lg text-decoration-none">
+                        {% trans "Imkoniyatlar" %} <i class="fas fa-arrow-down ms-2"></i>
+                    </a>
+                </div>
+                
+                <!-- Stats -->
+                <div class="row mt-5 pt-4">
+                    <div class="col-4">
+                        <div class="text-center">
+                            <h3 class="fw-bold text-primary">10K+</h3>
+                            <p class="text-muted">{% trans "Foydalanuvchi" %}</p>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center">
+                            <h3 class="fw-bold text-primary">1M+</h3>
+                            <p class="text-muted">{% trans "Operatsiya" %}</p>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center">
+                            <h3 class="fw-bold text-primary">24/7</h3>
+                            <p class="text-muted">{% trans "Qo'llab-quvvatlash" %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="hero-image position-relative">
+                    <div class="card dashboard-preview shadow-lg border-0">
+                        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{% trans "Dashboard Ko'rinishi" %}</h6>
+                            <div class="d-flex">
+                                <span class="dot bg-success me-1"></span>
+                                <span class="dot bg-warning me-1"></span>
+                                <span class="dot bg-danger"></span>
+                            </div>
+                        </div>
+                        <div class="card-body p-3">
+                            <!-- Mini dashboard preview -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <div class="p-3 bg-success bg-opacity-10 rounded">
+                                        <small class="text-muted">{% trans "Kirim" %}</small>
+                                        <h5 class="mb-0 text-success">5,250,000 UZS</h5>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-danger bg-opacity-10 rounded">
+                                        <small class="text-muted">{% trans "Chiqim" %}</small>
+                                        <h5 class="mb-0 text-danger">3,120,000 UZS</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Mini chart -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small>{% trans "Kategoriyalar bo'yicha" %}</small>
+                                    <small class="text-primary">{% trans "Haftalik" %}</small>
+                                </div>
+                                <div class="progress-stacked">
+                                    <div class="progress" style="width: 25%;">
+                                        <div class="progress-bar bg-primary"></div>
+                                    </div>
+                                    <div class="progress" style="width: 20%;">
+                                        <div class="progress-bar bg-info"></div>
+                                    </div>
+                                    <div class="progress" style="width: 15%;">
+                                        <div class="progress-bar bg-success"></div>
+                                    </div>
+                                    <div class="progress" style="width: 40%;">
+                                        <div class="progress-bar bg-warning"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <small class="text-primary">{% trans "Oziq-ovqat" %}</small>
+                                    <small class="text-warning">{% trans "Transport" %}</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Recent transactions -->
+                            <div>
+                                <h6 class="mb-3">{% trans "So'nggi operatsiyalar" %}</h6>
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item border-0 px-0 py-2 d-flex justify-content-between">
+                                        <div>
+                                            <i class="fas fa-shopping-cart text-danger me-2"></i>
+                                            <small>{% trans "Supermarket" %}</small>
+                                        </div>
+                                        <small class="text-danger">-125,000 UZS</small>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 py-2 d-flex justify-content-between">
+                                        <div>
+                                            <i class="fas fa-money-check-alt text-success me-2"></i>
+                                            <small>{% trans "Ish haqi" %}</small>
+                                        </div>
+                                        <small class="text-success">+5,000,000 UZS</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Floating elements -->
+                    <div class="floating-card card1">
+                        <i class="fas fa-wallet text-primary"></i>
+                    </div>
+                    <div class="floating-card card2">
+                        <i class="fas fa-chart-line text-success"></i>
+                    </div>
+                    <div class="floating-card card3">
+                        <i class="fas fa-piggy-bank text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">{% trans "Nima uchun Kirim-Chiqim?" %}</h2>
+            <p class="lead text-muted">{% trans "Bizning platformamizning afzalliklari" %}</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="fw-bold">{% trans "Har joyda foydalaning" %}</h4>
+                        <p class="text-muted">
+                            {% trans "Istalgan qurilmada ishlaydi. Kompyuter, planshet yoki smartfoningizdan foydalaning." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-chart-pie fa-3x text-success"></i>
+                        </div>
+                        <h4 class="fw-bold">{% trans "To'liq statistikalar" %}</h4>
+                        <p class="text-muted">
+                            {% trans "Vizual grafiklar, hisobotlar va tahlillar bilan moliyangizni kuzating." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-shield-alt fa-3x text-info"></i>
+                        </div>
+                        <h4 class="fw-bold">{% trans "Xavfsiz" %}</h4>
+                        <p class="text-muted">
+                            {% trans "Ma'lumotlaringiz shifrlangan holda saqlanadi. Maxfiylik kafolati." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 4 -->
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-language fa-3x text-warning"></i>
+                        </div>
+                        <h4 class="fw-bold">{% trans "Ko'p tilli" %}</h4>
+                        <p class="text-muted">
+                            {% trans "O'zbek, rus va ingliz tillarida ishlash imkoniyati. O'zingizga qulay tilda foydalaning." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 5 -->
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-wallet fa-3x text-danger"></i>
+                        </div>
+                        <h4 class="fw-bold">{% trans "Ko'p hisoblar" %}</h4>
+                        <p class="text-muted">
+                            {% trans "Naqd, karta, bank hisoblaringizni bitta joyda boshqaring. Valyutalarni alohida ajrating." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 6 -->
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-bell fa-3x text-purple"></i>
+                        </div>
+                        <h4 class="fw-bold">{% trans "Eslatmalar" %}</h4>
+                        <p class="text-muted">
+                            {% trans "To'lovlar, byudjet chegaralari va maqsadlar uchun eslatmalarni sozlang." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">{% trans "Qanday ishlaydi?" %}</h2>
+            <p class="lead text-muted">{% trans "3 oson qadamda moliyangizni boshqaring" %}</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="step-card text-center">
+                    <div class="step-number">1</div>
+                    <h4 class="fw-bold mt-3">{% trans "Hisob oching" %}</h4>
+                    <p class="text-muted">
+                        {% trans "Bir daqiqada ro'yxatdan o'ting va hisobingizni faollashtiring." %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="step-card text-center">
+                    <div class="step-number">2</div>
+                    <h4 class="fw-bold mt-3">{% trans "Hisoblar qo'shing" %}</h4>
+                    <p class="text-muted">
+                        {% trans "Naqd, karta va bank hisoblaringizni qo'shing." %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="step-card text-center">
+                    <div class="step-number">3</div>
+                    <h4 class="fw-bold mt-3">{% trans "Kuzatishni boshlang" %}</h4>
+                    <p class="text-muted">
+                        {% trans "Kirim va chiqimlaringizni kiritishni boshlang va statistikani ko'ring." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold">{% trans "Bugundan boshlab moliyangizni boshqaring" %}</h2>
+                <p class="lead mb-0">
+                    {% trans "Hech qanday karta talab qilinmaydi. 30 kun bepul sinov." %}
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                {% if not user.is_authenticated %}
+                <a href="{% url 'users:register' %}" class="btn btn-light btn-lg px-5">
+                    <i class="fas fa-rocket me-2"></i> {% trans "Bepul boshlash" %}
+                </a>
+                {% else %}
+                <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg px-5">
+                    <i class="fas fa-tachometer-alt me-2"></i> {% trans "Davom etish" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">{% trans "Foydalanuvchilarimiz nima deyishadi" %}</h2>
+            <p class="lead text-muted">{% trans "Bizning mijozlarimizning fikrlari" %}</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar bg-primary text-white rounded-circle me-3">
+                                AS
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Aziz Siddiqov</h6>
+                                <small class="text-muted">{% trans "Tadbirkor" %}</small>
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            "Bu ilova biznesimni boshqarishimga yordam berdi. Har bir chiqimni ko'ra olishim moliyaviy qarorlar qabul qilishimga yordam berdi."
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar bg-success text-white rounded-circle me-3">
+                                NM
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Nilufar Mahmudova</h6>
+                                <small class="text-muted">{% trans "Talaba" %}</small>
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            "Oylik stipendiyamni boshqarishda juda foydali. Byudjetni rejalashtirish va ortiqcha chiqimlarni kamaytirishga yordam berdi."
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar bg-info text-white rounded-circle me-3">
+                                JT
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Javlon Tursunov</h6>
+                                <small class="text-muted">{% trans "Dasturchi" %}</small>
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            "Ko'p tilli interfeys ajoyib. Ingliz tilida ishlayman, oilam esa rus tilida foydalanishi mumkin. Juda qulay!"
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">{% trans "Ko'p so'raladigan savollar" %}</h2>
+            <p class="lead text-muted">{% trans "Javoblarni toping" %}</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <!-- FAQ 1 -->
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                {% trans "Ilova bepulmi?" %}
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                {% trans "Ha, asosiy funksiyalar bepul. Keyinchalik premium funksiyalar qo'shilishi mumkin, lekin hozircha hammasi bepul." %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ 2 -->
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                {% trans "Ma'lumotlarim xavfsizmi?" %}
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                {% trans "Ha, barcha ma'lumotlaringiz shifrlangan holda saqlanadi. Biz bank ma'lumotlarini yoki karta raqamlarini saqlamaymiz." %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ 3 -->
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                {% trans "Mobil ilova mavjudmi?" %}
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                {% trans "Hozircha faqat veb-versiya mavjud. Mobil ilova keyingi oylarda chiqariladi." %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    
+    .dashboard-preview {
+        border-radius: 15px;
+        overflow: hidden;
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .floating-card {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        animation: float 4s ease-in-out infinite;
+    }
+    
+    .floating-card.card1 {
+        top: -20px;
+        left: -20px;
+        animation-delay: 0s;
+    }
+    
+    .floating-card.card2 {
+        bottom: 20px;
+        right: -30px;
+        animation-delay: 1s;
+    }
+    
+    .floating-card.card3 {
+        top: 50%;
+        left: -40px;
+        animation-delay: 2s;
+    }
+    
+    .feature-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+    }
+    
+    .feature-icon {
+        color: #6c757d;
+    }
+    
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0 auto;
+    }
+    
+    .step-card {
+        padding: 20px;
+    }
+    
+    .testimonial-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .avatar {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+        box-shadow: none;
+    }
+    
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if object %}{% trans "Byudjetni tahrirlash" %}{% else %}{% trans "Yangi byudjet" %}{% endif %} | Kirim-Chiqim
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.period-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.period-card {
+    padding: 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.period-card:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.period-card.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.period-icon {
+    font-size: 24px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.period-card.selected .period-icon {
+    color: #3b82f6;
+}
+
+.period-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.date-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.alert-settings {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'expenses:budget_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>{% trans "Byudjetlar ro'yxatiga qaytish" %}
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+        <div class="form-header">
+            <h1>
+                {% if object %}
+                <i class="fas fa-edit text-primary me-2"></i>{% trans "Byudjetni tahrirlash" %}
+                {% else %}
+                <i class="fas fa-plus-circle text-danger me-2"></i>{% trans "Yangi byudjet" %}
+                {% endif %}
+            </h1>
+            <p class="mb-0 text-muted">
+                {% if object %}
+                {% trans "Byudjet ma'lumotlarini yangilang" %}
+                {% else %}
+                {% trans "Yangi byudjet yarating" %}
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p class="mb-0">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Category -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Kategoriya" %}</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.category.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {% trans "Qaysi kategoriya uchun byudjet belgilamoqchisiz?" %}
+                </div>
+            </div>
+
+            <!-- Amount and Currency -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <label class="form-label">{% trans "Byudjet miqdori" %}</label>
+                    <div class="input-group">
+                        {{ form.amount }}
+                        <span class="input-group-text">{{ form.currency.value|default:"UZS" }}</span>
+                    </div>
+                    {% if form.amount.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.amount.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "Valyuta" %}</label>
+                    {{ form.currency }}
+                    {% if form.currency.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.currency.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Period -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Davr" %}</label>
+                <div class="period-cards">
+                    {% for value, label in form.fields.period.choices %}
+                    <div class="period-card" data-period="{{ value }}">
+                        <div class="period-icon">
+                            {% if value == 'daily' %}
+                            <i class="fas fa-calendar-day"></i>
+                            {% elif value == 'weekly' %}
+                            <i class="fas fa-calendar-week"></i>
+                            {% elif value == 'monthly' %}
+                            <i class="fas fa-calendar-alt"></i>
+                            {% else %}
+                            <i class="fas fa-calendar"></i>
+                            {% endif %}
+                        </div>
+                        <div class="period-name">{{ label }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {{ form.period }}
+                {% if form.period.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.period.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Dates -->
+            <div class="mb-4">
+                <label class="form-label">{% trans "Davr oralig'i" %}</label>
+                <div class="date-inputs">
+                    <div>
+                        <label class="form-label">{% trans "Boshlanish sanasi" %}</label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.start_date.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="form-label">{% trans "Tugash sanasi" %}</label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.end_date.errors }}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">
+                            {% trans "Ixtiyoriy. Bo'sh qoldirilsa, cheksiz hisoblanadi" %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Settings -->
+            <div class="alert-settings">
+                <h6 class="mb-3">
+                    <i class="fas fa-bell text-warning me-2"></i>{% trans "Ogohlantirish sozlamalari" %}
+                </h6>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Ogohlantirish chegirasi" %}</label>
+                        <div class="input-group">
+                            {{ form.alert_threshold }}
+                            <span class="input-group-text">%</span>
+                        </div>
+                        {% if form.alert_threshold.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.alert_threshold.errors }}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">
+                            {% trans "Byudjetning necha foizga yetganda ogohlantirish yuborilsin?" %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check form-switch">
+                    {{ form.send_alerts }}
+                    <label class="form-check-label" for="{{ form.send_alerts.id_for_label }}">
+                        {% trans "Ogohlantirishlarni yoqish" %}
+                    </label>
+                </div>
+                <div class="form-text">
+                    {% trans "Ogohlantirishlar email orqali yuboriladi" %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-primary flex-fill">
+                    {% if object %}
+                    <i class="fas fa-sync me-2"></i>{% trans "Yangilash" %}
+                    {% else %}
+                    <i class="fas fa-save me-2"></i>{% trans "Saqlash" %}
+                    {% endif %}
+                </button>
+                <a href="{% url 'expenses:budget_list' %}" class="btn btn-secondary flex-fill">
+                    <i class="fas fa-times me-2"></i>{% trans "Bekor qilish" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const periodInput = document.querySelector('#id_period');
+    const periodCards = document.querySelectorAll('.period-card');
+    
+    // Period selection
+    periodCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            periodCards.forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            
+            // Update period input
+            const period = this.dataset.period;
+            periodInput.value = period;
+            
+            // Update end date placeholder based on period
+            updateEndDatePlaceholder(period);
+        });
+    });
+    
+    // Set initial selection
+    if (periodInput.value) {
+        const selectedCard = document.querySelector(`.period-card[data-period="${periodInput.value}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+        }
+    } else {
+        // Default to monthly
+        const monthlyCard = document.querySelector('.period-card[data-period="monthly"]');
+        if (monthlyCard) {
+            monthlyCard.click();
+        }
+    }
+    
+    function updateEndDatePlaceholder(period) {
+        const startDateInput = document.querySelector('#id_start_date');
+        const endDateInput = document.querySelector('#id_end_date');
+        
+        if (startDateInput.value) {
+            const startDate = new Date(startDateInput.value);
+            let endDate = new Date(startDate);
+            
+            switch(period) {
+                case 'daily':
+                    endDate.setDate(endDate.getDate() + 1);
+                    break;
+                case 'weekly':
+                    endDate.setDate(endDate.getDate() + 7);
+                    break;
+                case 'monthly':
+                    endDate.setMonth(endDate.getMonth() + 1);
+                    break;
+                case 'yearly':
+                    endDate.setFullYear(endDate.getFullYear() + 1);
+                    break;
+            }
+            
+            // Format date as YYYY-MM-DD
+            const formattedDate = endDate.toISOString().split('T')[0];
+            endDateInput.placeholder = formattedDate;
+        }
+    }
+    
+    // Update end date placeholder when start date changes
+    const startDateInput = document.querySelector('#id_start_date');
+    if (startDateInput) {
+        startDateInput.addEventListener('change', function() {
+            updateEndDatePlaceholder(periodInput.value);
+        });
+    }
+});
+</script>
+{% endblock %}

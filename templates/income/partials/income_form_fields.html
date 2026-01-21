@@ -1,0 +1,875 @@
+<form id="incomeForm" method="post" enctype="multipart/form-data" 
+      class="needs-validation" novalidate>
+    {% csrf_token %}
+    
+    <!-- Xato va muvaffaqiyat xabarlari uchun -->
+    <div id="formMessages" class="mb-3" style="display: none;">
+        <div class="alert" role="alert" id="formAlert"></div>
+    </div>
+    
+    <div class="row g-3">
+        <!-- Miqdor va Valyuta -->
+        <div class="col-md-6">
+            <label for="id_amount" class="form-label">
+                <i class="fas fa-money-bill-wave me-1"></i>Miqdor *
+            </label>
+            <div class="input-group has-validation">
+                {{ form.amount }}
+                <span class="input-group-text" id="currencySymbol">UZS</span>
+                <div class="invalid-feedback" id="amountError">
+                    Iltimos, to'g'ri miqdor kiriting
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <label for="id_currency" class="form-label">
+                <i class="fas fa-globe me-1"></i>Valyuta *
+            </label>
+            {{ form.currency }}
+        </div>
+        
+        <!-- Kategoriya -->
+        <div class="col-md-6">
+            <label for="id_category" class="form-label">
+                <i class="fas fa-folder me-1"></i>Kategoriya *
+            </label>
+            <div class="input-group">
+                {{ form.category }}
+                <button type="button" class="btn btn-outline-primary" 
+                        onclick="openCategoryModal()" title="Yangi kategoriya">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            {% if form.category.errors %}
+            <div class="text-danger small mt-1">{{ form.category.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <!-- Manba -->
+        <div class="col-md-6">
+            <label for="id_source" class="form-label">
+                <i class="fas fa-building me-1"></i>Manba *
+            </label>
+            <div class="input-group">
+                {{ form.source }}
+                <button type="button" class="btn btn-outline-secondary" 
+                        onclick="loadSourceSuggestions()" title="Tavsiyalar">
+                    <i class="fas fa-bolt"></i>
+                </button>
+            </div>
+            <div id="sourceSuggestions" class="list-group mt-2" style="display: none;"></div>
+        </div>
+        
+        <!-- Sana va Vaqt -->
+        <div class="col-md-6">
+            <label for="id_date" class="form-label">
+                <i class="fas fa-calendar-alt me-1"></i>Sana *
+            </label>
+            {{ form.date }}
+        </div>
+        
+        <div class="col-md-6">
+            <label for="id_time" class="form-label">
+                <i class="fas fa-clock me-1"></i>Vaqt (ixtiyoriy)
+            </label>
+            {{ form.time }}
+        </div>
+        
+        <!-- Holat -->
+        <div class="col-md-6">
+            <label for="id_status" class="form-label">
+                <i class="fas fa-info-circle me-1"></i>Holat
+            </label>
+            {{ form.status }}
+        </div>
+        
+        <!-- To'lov Usuli -->
+        <div class="col-md-6">
+            <label for="id_payment_method" class="form-label">
+                <i class="fas fa-credit-card me-1"></i>To'lov Usuli
+            </label>
+            {{ form.payment_method }}
+        </div>
+        
+        <!-- Tavsif -->
+        <div class="col-12">
+            <label for="id_description" class="form-label">
+                <i class="fas fa-align-left me-1"></i>Tavsif (ixtiyoriy)
+            </label>
+            <div class="position-relative">
+                {{ form.description }}
+                <small class="text-muted position-absolute bottom-0 end-0 mb-1 me-2">
+                    <span id="charCount">0</span>/500
+                </small>
+            </div>
+        </div>
+        
+        <!-- Teglar -->
+        <div class="col-12">
+            <label for="id_tags" class="form-label">
+                <i class="fas fa-tags me-1"></i>Teglar (ixtiyoriy)
+            </label>
+            <div class="input-group">
+                {{ form.tags }}
+                <button type="button" class="btn btn-outline-info" 
+                        onclick="openTagModal()" title="Yangi teg">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                Ctrl (Windows) yoki Cmd (Mac) tugmasini bosib turib, bir nechta teg tanlash mumkin
+            </div>
+        </div>
+        
+        <!-- Soliq Sozlamalari -->
+        <div class="col-md-6">
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_taxable }}
+                        <label class="form-check-label" for="id_is_taxable">
+                            <i class="fas fa-percentage me-1"></i>Soliqqa tortiladigan
+                        </label>
+                    </div>
+                    
+                    <div id="taxOptions" class="mt-3" style="display: none;">
+                        <label for="id_tax_amount" class="form-label">Soliq Miqdori</label>
+                        <div class="input-group">
+                            {{ form.tax_amount }}
+                            <span class="input-group-text">UZS</span>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col">
+                                <button type="button" class="btn btn-sm btn-outline-secondary w-100" 
+                                        onclick="calculateTax(10)">10%</button>
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-sm btn-outline-secondary w-100" 
+                                        onclick="calculateTax(12)">12%</button>
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-sm btn-outline-secondary w-100" 
+                                        onclick="calculateTax(15)">15%</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Takrorlanish -->
+        <div class="col-md-6">
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_recurring }}
+                        <label class="form-check-label" for="id_is_recurring">
+                            <i class="fas fa-redo me-1"></i>Takrorlanuvchi kirim
+                        </label>
+                    </div>
+                    
+                    <div id="recurringOptions" class="mt-3" style="display: none;">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Takrorlanish turi</label>
+                                <select class="form-control" name="recurrence_type" id="recurrence_type">
+                                    <option value="daily">Har kuni</option>
+                                    <option value="weekly">Har hafta</option>
+                                    <option value="monthly" selected>Har oy</option>
+                                    <option value="yearly">Har yil</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Interval</label>
+                                <input type="number" class="form-control" name="recurrence_interval" 
+                                       id="recurrence_interval" value="1" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_next_occurrence" class="form-label">Keyingi takrorlanish</label>
+                                {{ form.next_occurrence }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tugash sanasi</label>
+                                <input type="date" class="form-control" name="recurrence_end_date" 
+                                       id="recurrence_end_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fayl biriktirish -->
+        <div class="col-12">
+            <div class="card mt-3">
+                <div class="card-body">
+                    <label for="id_attachment" class="form-label">
+                        <i class="fas fa-paperclip me-1"></i>Fayl biriktirish (ixtiyoriy)
+                    </label>
+                    <div class="input-group">
+                        {{ form.attachment }}
+                        <button type="button" class="btn btn-outline-secondary" 
+                                onclick="document.getElementById('id_attachment').click()">
+                            <i class="fas fa-upload me-1"></i>Yuklash
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Chek, shartnoma yoki boshqa hujjat (PDF, JPG, PNG, DOC, XLS - maksimal 5MB)
+                    </div>
+                    
+                    <!-- Fayl ko'rinishi -->
+                    <div id="filePreview" class="mt-2" style="display: none;">
+                        <div class="d-flex align-items-center bg-light p-2 rounded">
+                            <i class="fas fa-file me-2"></i>
+                            <span id="fileName"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-auto" 
+                                    onclick="clearFile()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Net Miqdor -->
+        <div class="col-12">
+            <div class="alert alert-info mt-3" id="netAmountAlert" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-calculator me-2"></i>
+                        <strong>Net Miqdor:</strong>
+                        <span id="netAmount" class="ms-2 h5 mb-0">0</span>
+                        <span id="netCurrency" class="ms-1">UZS</span>
+                    </div>
+                    <div>
+                        <small class="text-muted">
+                            Kirim: <span id="grossAmount">0</span> - 
+                            Soliq: <span id="displayTax">0</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Harakatlari -->
+        <div class="col-12">
+            <hr>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="saveAsTemplate">
+                    <label class="form-check-label" for="saveAsTemplate">
+                        Shablon sifatida saqlash
+                    </label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        <i class="fas fa-times me-2"></i>Bekor qilish
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save me-2"></i>
+                        <span id="submitText">Saqlash</span>
+                        <span class="spinner-border spinner-border-sm ms-2" 
+                              id="submitSpinner" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Yangi Kategoriya Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-folder-plus me-2"></i>Yangi Kategoriya
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nomi *</label>
+                    <input type="text" class="form-control" id="newCategoryName">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rang</label>
+                    <input type="color" class="form-control form-control-color" 
+                           id="newCategoryColor" value="#3b82f6">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ikonka</label>
+                    <input type="text" class="form-control" id="newCategoryIcon" 
+                           placeholder="fas fa-money-bill-wave">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">
+                    <i class="fas fa-save me-2"></i>Saqlash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yangi Teg Modal -->
+<div class="modal fade" id="tagModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tag me-2"></i>Yangi Teg
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nomi *</label>
+                    <input type="text" class="form-control" id="newTagName">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rang</label>
+                    <input type="color" class="form-control form-control-color" 
+                           id="newTagColor" value="#3b82f6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor</button>
+                <button type="button" class="btn btn-primary" onclick="saveTag()">
+                    <i class="fas fa-save me-2"></i>Saqlash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form submit - AJAX bilan
+    $('#incomeForm').submit(function(e) {
+        e.preventDefault();
+        saveIncome();
+    });
+    
+    // Miqdor va soliq hisoblash
+    $('#id_amount, #id_tax_amount').on('input', calculateNetAmount);
+    
+    // Soliq toggle
+    $('#id_is_taxable').change(function() {
+        if ($(this).is(':checked')) {
+            $('#taxOptions').slideDown();
+            calculateNetAmount();
+        } else {
+            $('#taxOptions').slideDown();
+            $('#id_tax_amount').val('0');
+            calculateNetAmount();
+        }
+    });
+    
+    // Takrorlanish toggle
+    $('#id_is_recurring').change(function() {
+        if ($(this).is(':checked')) {
+            $('#recurringOptions').slideDown();
+            // Avtomatik keyingi sanani hisoblash
+            calculateNextOccurrence();
+        } else {
+            $('#recurringOptions').slideUp();
+        }
+    });
+    
+    // Takrorlanish turi o'zgarganda
+    $('#recurrence_type, #recurrence_interval').change(calculateNextOccurrence);
+    
+    // Fayl yuklash
+    $('#id_attachment').change(function() {
+        const file = this.files[0];
+        if (file) {
+            $('#fileName').text(file.name);
+            $('#filePreview').slideDown();
+        }
+    });
+    
+    // Tavsif belgilar soni
+    $('#id_description').on('input', function() {
+        $('#charCount').text($(this).val().length);
+    });
+    
+    // Valyuta o'zgarganda
+    $('#id_currency').change(function() {
+        const currency = $(this).val();
+        $('#currencySymbol').text(currency);
+        $('#netCurrency').text(currency);
+    });
+    
+    // Boshlang'ich sozlamalar
+    initializeForm();
+});
+
+// Formani saqlash funksiyasi
+function saveIncome() {
+    const submitBtn = $('#submitBtn');
+    const submitText = $('#submitText');
+    const submitSpinner = $('#submitSpinner');
+    
+    // Tugmani o'chirish
+    submitBtn.prop('disabled', true);
+    submitText.text('Saqlanmoqda...');
+    submitSpinner.show();
+    
+    // Form ma'lumotlarini yig'ish
+    const formData = new FormData($('#incomeForm')[0]);
+    
+    // Takrorlanish ma'lumotlari
+    if ($('#id_is_recurring').is(':checked')) {
+        formData.append('recurrence_type', $('#recurrence_type').val());
+        formData.append('recurrence_interval', $('#recurrence_interval').val());
+        formData.append('recurrence_end_date', $('#recurrence_end_date').val());
+    }
+    
+    // Save as template
+    if ($('#saveAsTemplate').is(':checked')) {
+        formData.append('save_as_template', 'true');
+    }
+    
+    // AJAX so'rovi
+    $.ajax({
+        url: '{% if income %}{% url "income:update" income.uuid %}{% else %}{% url "income:create" %}{% endif %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                showSuccess('Kirim muvaffaqiyatli saqlandi!');
+                
+                // 2 soniyadan keyin modalni yopish va sahifani yangilash
+                setTimeout(function() {
+                    $('#addIncomeModal').modal('hide');
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        window.location.reload();
+                    }
+                }, 2000);
+            } else {
+                showError(response.message || 'Xatolik yuz berdi!');
+                displayFormErrors(response.errors || {});
+            }
+        },
+        error: function(xhr) {
+            showError('Server xatosi: ' + xhr.statusText);
+        },
+        complete: function() {
+            // Tugmani qayta yoqish
+            submitBtn.prop('disabled', false);
+            submitText.text('Saqlash');
+            submitSpinner.hide();
+        }
+    });
+}
+
+// Net miqdor hisoblash
+function calculateNetAmount() {
+    const amount = parseFloat($('#id_amount').val()) || 0;
+    const tax = parseFloat($('#id_tax_amount').val()) || 0;
+    const net = amount - tax;
+    
+    if (amount > 0) {
+        $('#grossAmount').text(amount.toLocaleString());
+        $('#displayTax').text(tax.toLocaleString());
+        $('#netAmount').text(net.toLocaleString());
+        $('#netAmountAlert').slideDown();
+    } else {
+        $('#netAmountAlert').slideUp();
+    }
+}
+
+// Soliq foiz hisoblash
+function calculateTax(percentage) {
+    const amount = parseFloat($('#id_amount').val()) || 0;
+    if (amount > 0) {
+        const tax = (amount * percentage) / 100;
+        $('#id_tax_amount').val(tax.toFixed(2));
+        calculateNetAmount();
+    }
+}
+
+// Keyingi takrorlanish sanasini hisoblash
+function calculateNextOccurrence() {
+    if (!$('#id_is_recurring').is(':checked')) return;
+    
+    const dateStr = $('#id_date').val();
+    if (!dateStr) return;
+    
+    const date = new Date(dateStr);
+    const type = $('#recurrence_type').val();
+    const interval = parseInt($('#recurrence_interval').val()) || 1;
+    
+    let nextDate = new Date(date);
+    
+    switch(type) {
+        case 'daily':
+            nextDate.setDate(date.getDate() + interval);
+            break;
+        case 'weekly':
+            nextDate.setDate(date.getDate() + (interval * 7));
+            break;
+        case 'monthly':
+            nextDate.setMonth(date.getMonth() + interval);
+            break;
+        case 'yearly':
+            nextDate.setFullYear(date.getFullYear() + interval);
+            break;
+    }
+    
+    // Format: YYYY-MM-DD
+    const nextDateStr = nextDate.toISOString().split('T')[0];
+    $('#id_next_occurrence').val(nextDateStr);
+}
+
+// Yangi kategoriya modalini ochish
+function openCategoryModal() {
+    $('#categoryModal').modal('show');
+}
+
+// Kategoriyani saqlash
+function saveCategory() {
+    const name = $('#newCategoryName').val().trim();
+    const color = $('#newCategoryColor').val();
+    const icon = $('#newCategoryIcon').val().trim() || 'fas fa-money-bill-wave';
+    
+    if (!name) {
+        alert('Iltimos, kategoriya nomini kiriting!');
+        return;
+    }
+    
+    $.ajax({
+        url: '{% url "income:category_create" %}',
+        type: 'POST',
+        data: {
+            name: name,
+            color: color,
+            icon: icon,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                // Yangi kategoriyani select ga qo'shish
+                const $select = $('#id_category');
+                const newOption = new Option(
+                    response.category.name, 
+                    response.category.id, 
+                    true, 
+                    true
+                );
+                $select.append(newOption).trigger('change');
+                
+                // Modalni yopish
+                $('#categoryModal').modal('hide');
+                
+                // Formani tozalash
+                $('#newCategoryName').val('');
+                $('#newCategoryIcon').val('');
+                
+                showSuccess('Kategoriya saqlandi!');
+            }
+        }
+    });
+}
+
+// Yangi teg modalini ochish
+function openTagModal() {
+    $('#tagModal').modal('show');
+}
+
+// Tegni saqlash
+function saveTag() {
+    const name = $('#newTagName').val().trim();
+    const color = $('#newTagColor').val();
+    
+    if (!name) {
+        alert('Iltimos, teg nomini kiriting!');
+        return;
+    }
+    
+    $.ajax({
+        url: '{% url "income:tag_create" %}',
+        type: 'POST',
+        data: {
+            name: name,
+            color: color,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                // Yangi tegni select ga qo'shish
+                const $select = $('#id_tags');
+                const newOption = new Option(
+                    response.tag.name, 
+                    response.tag.id, 
+                    true, 
+                    true
+                );
+                newOption.setAttribute('data-color', response.tag.color);
+                $select.append(newOption).trigger('change');
+                
+                // Modalni yopish
+                $('#tagModal').modal('hide');
+                
+                // Formani tozalash
+                $('#newTagName').val('');
+                
+                showSuccess('Teg saqlandi!');
+            }
+        }
+    });
+}
+
+// Manba tavsiyalarini yuklash
+function loadSourceSuggestions() {
+    const query = $('#id_source').val();
+    
+    if (query && query.length >= 2) {
+        $.get('{% url "income:get_autocomplete_sources" %}?q=' + encodeURIComponent(query), 
+            function(data) {
+                const $suggestions = $('#sourceSuggestions');
+                $suggestions.empty();
+                
+                if (data.sources && data.sources.length > 0) {
+                    data.sources.forEach(function(source) {
+                        $suggestions.append(`
+                            <a href="#" class="list-group-item list-group-item-action" 
+                               onclick="selectSource('${source}')">
+                                <i class="fas fa-building me-2"></i>${source}
+                            </a>
+                        `);
+                    });
+                    $suggestions.slideDown();
+                }
+            });
+    }
+}
+
+// Manbani tanlash
+function selectSource(source) {
+    $('#id_source').val(source);
+    $('#sourceSuggestions').slideUp();
+}
+
+// Faylni tozalash
+function clearFile() {
+    $('#id_attachment').val('');
+    $('#filePreview').slideUp();
+}
+
+// Xabarlarni ko'rsatish
+function showSuccess(message) {
+    $('#formAlert')
+        .removeClass('alert-danger')
+        .addClass('alert-success')
+        .html(`<i class="fas fa-check-circle me-2"></i>${message}`);
+    $('#formMessages').slideDown();
+    
+    // 5 soniyadan keyin yashirish
+    setTimeout(function() {
+        $('#formMessages').slideUp();
+    }, 5000);
+}
+
+function showError(message) {
+    $('#formAlert')
+        .removeClass('alert-success')
+        .addClass('alert-danger')
+        .html(`<i class="fas fa-exclamation-circle me-2"></i>${message}`);
+    $('#formMessages').slideDown();
+}
+
+// Form xatolarini ko'rsatish
+function displayFormErrors(errors) {
+    // Barcha xatolarni tozalash
+    $('.invalid-feedback').hide();
+    $('.is-invalid').removeClass('is-invalid');
+    
+    // Yangi xatolarni ko'rsatish
+    for (const field in errors) {
+        const $field = $(`#id_${field}`);
+        const $error = $(`#${field}Error`) || $field.next('.invalid-feedback');
+        
+        $field.addClass('is-invalid');
+        if ($error.length) {
+            $error.text(errors[field].join(', ')).show();
+        }
+    }
+}
+
+// Modalni yopish
+function closeModal() {
+    if ($('#incomeForm')[0].checkValidity()) {
+        if (confirm("O'zgarishlarni saqlamasdan chiqmoqchimisiz?")) {
+            $('#addIncomeModal').modal('hide');
+        }
+    } else {
+        $('#addIncomeModal').modal('hide');
+    }
+}
+
+// Formani boshlang'ich holatga keltirish
+function initializeForm() {
+    // Boshlang'ich sanani o'rnatish
+    if (!$('#id_date').val()) {
+        const today = new Date().toISOString().split('T')[0];
+        $('#id_date').val(today);
+    }
+    
+    // Boshlang'ich vaqtni o'rnatish
+    if (!$('#id_time').val()) {
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2, '0') + ':' + 
+                    now.getMinutes().toString().padStart(2, '0');
+        $('#id_time').val(time);
+    }
+    
+    // Agar takrorlanuvchi bo'lsa
+    if ($('#id_is_recurring').is(':checked')) {
+        $('#recurringOptions').show();
+        calculateNextOccurrence();
+    }
+    
+    // Agar soliqqa tortilsa
+    if ($('#id_is_taxable').is(':checked')) {
+        $('#taxOptions').show();
+    }
+    
+    // Net miqdorni hisoblash
+    calculateNetAmount();
+    
+    // Tavsif belgilar soni
+    $('#charCount').text($('#id_description').val().length);
+}
+
+// Formani tozalash
+function clearForm() {
+    $('#incomeForm')[0].reset();
+    $('#filePreview').slideUp();
+    $('#netAmountAlert').slideUp();
+    $('#formMessages').slideUp();
+    $('#charCount').text('0');
+    initializeForm();
+}
+
+// Export funksiyalari
+window.calculateTax = calculateTax;
+window.openCategoryModal = openCategoryModal;
+window.openTagModal = openTagModal;
+window.loadSourceSuggestions = loadSourceSuggestions;
+window.selectSource = selectSource;
+window.clearFile = clearFile;
+window.closeModal = closeModal;
+</script>
+
+<style>
+/* Form styling */
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+
+.invalid-feedback {
+    display: none;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+/* Card styling */
+.card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Button styling */
+.btn-outline-primary:hover {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* List group for suggestions */
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* File preview */
+#filePreview {
+    border: 1px dashed #dee2e6;
+    border-radius: 8px;
+}
+
+/* Alert styling */
+.alert-success {
+    background-color: #d1fae5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+/* Spinner */
+.spinner-border {
+    vertical-align: middle;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .row.g-3 {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+    
+    .col-md-6, .col-md-12 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+</style>

@@ -1,0 +1,719 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load i18n %}
+
+{% block title %}{% trans "Kirim Statistika" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.css">
+<style>
+    .stats-header {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    .stat-change {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    .period-selector .btn-group {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .period-selector .btn {
+        border: none;
+        padding: 0.5rem 1.5rem;
+    }
+    .period-selector .btn.active {
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .category-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        background: #f8f9fa;
+        transition: background 0.3s ease;
+    }
+    .category-item:hover {
+        background: #e9ecef;
+    }
+    .category-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        margin-right: 1rem;
+    }
+    .category-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e9ecef;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    .category-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+    .trend-indicator {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .comparison-card {
+        border-left: 4px solid;
+        padding-left: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="stats-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb breadcrumb-light">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'income:list' %}" class="text-light">
+                                <i class="fas fa-money-bill-wave me-1"></i>{% trans "Kirimlar" %}
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active text-light" aria-current="page">
+                            {% trans "Statistika" %}
+                        </li>
+                    </ol>
+                </nav>
+                
+                <h1 class="h2 mb-2">{% trans "Kirimlar Statistika" %}</h1>
+                <p class="mb-0 opacity-75">
+                    {% trans "Daromadlaringizning batafsil tahlili va ko'rsatkichlari" %}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download me-2"></i>{% trans "Export" %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'income:export' %}?format=excel">
+                                <i class="fas fa-file-excel text-success me-2"></i>
+                                {% trans "Excel" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'income:export' %}?format=csv">
+                                <i class="fas fa-file-csv text-primary me-2"></i>
+                                {% trans "CSV" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Period Selector -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <h6 class="mb-0">{% trans "Vaqt oralig'i" %}</h6>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="period-selector">
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="period" id="period-week" 
+                                           autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="period-week">
+                                        {% trans "Bu hafta" %}
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="period" id="period-month" 
+                                           autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="period-month">
+                                        {% trans "Bu oy" %}
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="period" id="period-year" 
+                                           autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="period-year">
+                                        {% trans "Bu yil" %}
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="period" id="period-custom" 
+                                           autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="period-custom">
+                                        {% trans "Maxsus" %}
+                                    </label>
+                                </div>
+                                
+                                <div class="row mt-3 d-none" id="customPeriod">
+                                    <div class="col-md-5">
+                                        <input type="date" class="form-control" id="dateFrom" 
+                                               value="{{ date_from|date:'Y-m-d' }}">
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <span class="text-muted">{% trans "to" %}</span>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <input type="date" class="form-control" id="dateTo" 
+                                               value="{{ date_to|date:'Y-m-d' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-top border-top-4 border-success">
+                <div class="card-body">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-value text-success">
+                        {{ total_stats.total|default:0|floatformat:0|intcomma }}
+                    </div>
+                    <div class="stat-label">{% trans "Jami Kirim" %}</div>
+                    <div class="stat-change text-success">
+                        <i class="fas fa-arrow-up me-1"></i>{% trans "bu yil" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-top border-top-4 border-primary">
+                <div class="card-body">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="stat-value text-primary">
+                        {{ total_stats.avg|default:0|floatformat:0|intcomma }}
+                    </div>
+                    <div class="stat-label">{% trans "O'rtacha Kirim" %}</div>
+                    <div class="stat-change text-primary">
+                        <i class="fas fa-chart-line me-1"></i>{% trans "per transaction" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-top border-top-4 border-warning">
+                <div class="card-body">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-value text-warning">
+                        {{ total_stats.total_tax|default:0|floatformat:0|intcomma }}
+                    </div>
+                    <div class="stat-label">{% trans "Jami Soliq" %}</div>
+                    <div class="stat-change text-warning">
+                        <i class="fas fa-calculator me-1"></i>{% trans "chegirilgan" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-top border-top-4 border-info">
+                <div class="card-body">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info">
+                        <i class="fas fa-list-ol"></i>
+                    </div>
+                    <div class="stat-value text-info">
+                        {{ total_stats.count|default:0 }}
+                    </div>
+                    <div class="stat-label">{% trans "Jami Operatsiyalar" %}</div>
+                    <div class="stat-change text-info">
+                        <i class="fas fa-chart-bar me-1"></i>{% trans "barcha vaqt" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <!-- Monthly Trend Chart -->
+        <div class="col-lg-8">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        {% trans "Oylik Trend" %} ({{ current_year }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Distribution -->
+        <div class="col-lg-4">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        {% trans "Kategoriyalar Bo'yicha" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for category in category_distribution %}
+                    <div class="category-item">
+                        <div class="category-color" style="background-color: {{ category.category__color }}"></div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ category.category__name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ category.total|floatformat:0|intcomma }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ category.percentage|floatformat:1 }}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="category-bar">
+                                <div class="category-fill" 
+                                     style="width: {{ category.percentage|default:0 }}%; 
+                                            background-color: {{ category.category__color }}"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-chart-pie fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">{% trans "Hozircha ma'lumot yo'q" %}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Trend & Payment Methods -->
+    <div class="row mb-4">
+        <!-- Daily Trend -->
+        <div class="col-lg-6">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        {% trans "Kunlik Trend" %} ({% trans "oxirgi 30 kun" %})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Methods -->
+        <div class="col-lg-6">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        {% trans "To'lov Usullari" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for payment in payment_method_stats %}
+                    <div class="category-item">
+                        <div class="category-color bg-light"></div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ payment.get_payment_method_display }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ payment.total|floatformat:0|intcomma }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ payment.count }} {% trans "ta" %}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ payment.percentage|floatformat:1 }}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="category-bar">
+                                <div class="category-fill" 
+                                     style="width: {{ payment.percentage|default:0 }}%; 
+                                            background-color: #3b82f6"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-credit-card fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">{% trans "Hozircha ma'lumot yo'q" %}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Sources & Comparison -->
+    <div class="row">
+        <!-- Top Sources -->
+        <div class="col-lg-8">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-crown me-2"></i>
+                        {% trans "Top 10 Manbalar" %} ({{ current_year }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Manba" %}</th>
+                                    <th class="text-end">{% trans "Miqdor" %}</th>
+                                    <th class="text-end">{% trans "Operatsiyalar" %}</th>
+                                    <th class="text-end">{% trans "Oxirgi" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for source in top_sources %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ source.source }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="text-success fw-bold">
+                                            {{ source.total|floatformat:0|intcomma }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-light text-dark">
+                                            {{ source.count }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <small class="text-muted">
+                                            {{ source.last_date|date:"d M Y" }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">
+                                        <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                                        <p class="text-muted mb-0">{% trans "Hozircha ma'lumot yo'q" %}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Year Comparison -->
+        <div class="col-lg-4">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-balance-scale me-2"></i>
+                        {% trans "Yil Taqqoslash" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for comparison in yearly_comparison %}
+                    <div class="comparison-card mb-3" 
+                         style="border-color: {{ forloop.counter|yesno:'#10b981,#3b82f6,#f59e0b,#ef4444' }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ comparison.year }}</h6>
+                                <small class="text-muted">
+                                    {{ comparison.count }} {% trans "ta operatsiya" %}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 mb-0">
+                                    {{ comparison.total|floatformat:0|intcomma }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ comparison.avg|floatformat:0|intcomma }} {% trans "o'rtacha" %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quick Insights -->
+            <div class="card stat-card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        {% trans "Tezkor Tahlil" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-up text-success me-2"></i>
+                            <small>{% trans "Eng yuqori oy" %}: <strong>{{ best_month.month }}</strong></small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-star text-warning me-2"></i>
+                            <small>{% trans "Eng faol kategoriya" %}: <strong>{{ top_category.name }}</strong></small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-chart-line text-primary me-2"></i>
+                            <small>{% trans "O'rtacha o'sish" %}: <strong>{{ growth_rate|default:0 }}%</strong></small>
+                        </li>
+                        <li>
+                            <i class="fas fa-calendar-check text-info me-2"></i>
+                            <small>{% trans "Faol kunlar" %}: <strong>{{ active_days|default:0 }}</strong></small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+$(document).ready(function() {
+    // Initialize date pickers
+    flatpickr("#dateFrom, #dateTo", {
+        dateFormat: "Y-m-d",
+        locale: "uz"
+    });
+    
+    // Period selector
+    $('input[name="period"]').change(function() {
+        if (this.id === 'period-custom') {
+            $('#customPeriod').removeClass('d-none');
+        } else {
+            $('#customPeriod').addClass('d-none');
+            loadStats($(this).attr('id'));
+        }
+    });
+    
+    // Custom period submit
+    $('#dateFrom, #dateTo').change(function() {
+        if ($('#period-custom').is(':checked')) {
+            loadCustomStats();
+        }
+    });
+    
+    // Monthly Trend Chart
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyChart = new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_trend|safe }},
+            datasets: [{
+                label: '{% trans "Oylik Kirim" %}',
+                data: {{ monthly_trend_data|safe }},
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' {% trans "so'm" %}';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' {% trans "so'm" %}';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Daily Trend Chart
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    const dailyChart = new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ daily_trend_labels|safe }},
+            datasets: [{
+                label: '{% trans "Kunlik Kirim" %}',
+                data: {{ daily_trend_data|safe }},
+                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                borderColor: '#10b981',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' {% trans "so'm" %}';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Load stats function
+    function loadStats(period) {
+        let url = '{% url "income:stats" %}?period=' + period.replace('period-', '');
+        
+        $.get(url, function(data) {
+            // Update stats cards
+            updateStatsCards(data.stats);
+            
+            // Update charts
+            updateCharts(data.charts);
+            
+            // Update tables
+            updateTables(data.tables);
+        });
+    }
+    
+    function loadCustomStats() {
+        const dateFrom = $('#dateFrom').val();
+        const dateTo = $('#dateTo').val();
+        
+        if (!dateFrom || !dateTo) return;
+        
+        let url = '{% url "income:stats" %}?date_from=' + dateFrom + '&date_to=' + dateTo;
+        
+        $.get(url, function(data) {
+            updateStatsCards(data.stats);
+            updateCharts(data.charts);
+            updateTables(data.tables);
+        });
+    }
+    
+    function updateStatsCards(stats) {
+        // Implementation depends on your backend response structure
+        console.log('Updating stats cards:', stats);
+    }
+    
+    function updateCharts(charts) {
+        // Implementation depends on your backend response structure
+        console.log('Updating charts:', charts);
+    }
+    
+    function updateTables(tables) {
+        // Implementation depends on your backend response structure
+        console.log('Updating tables:', tables);
+    }
+    
+    // Export functions
+    window.exportToExcel = function() {
+        window.location.href = '{% url "income:export" %}?format=excel';
+    };
+    
+    window.exportToCSV = function() {
+        window.location.href = '{% url "income:export" %}?format=csv';
+    };
+});
+</script>
+{% endblock %}

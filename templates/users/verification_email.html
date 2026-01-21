@@ -1,0 +1,574 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'uz' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "Emailni tasdiqlash" %} | Kirim-Chiqim</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .email-header::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .email-header::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: -80px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+        
+        .email-logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: block;
+            text-decoration: none;
+            color: white;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .email-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .email-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .email-body {
+            padding: 50px 40px;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .welcome-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+        }
+        
+        .welcome-icon i {
+            font-size: 48px;
+            color: white;
+        }
+        
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        
+        .welcome-text {
+            font-size: 16px;
+            color: #64748b;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+        
+        .verification-box {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            border: 2px dashed #cbd5e1;
+        }
+        
+        .verification-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 15px;
+        }
+        
+        .verification-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white !important;
+            text-decoration: none;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .verification-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
+        }
+        
+        .verification-code {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #1e293b;
+            margin: 10px 0;
+        }
+        
+        .timer-section {
+            background: #fff7ed;
+            border: 2px solid #fed7aa;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .timer-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+        
+        .timer {
+            font-size: 36px;
+            font-weight: 800;
+            color: #dc2626;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        
+        .steps-section {
+            margin: 40px 0;
+        }
+        
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .step-content h4 {
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        
+        .step-content p {
+            color: #64748b;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        
+        .user-info {
+            background: #f0f9ff;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .info-item {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #475569;
+            min-width: 120px;
+        }
+        
+        .info-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        
+        .security-note {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .security-note h4 {
+            color: #b91c1c;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .security-note h4 i {
+            margin-right: 10px;
+        }
+        
+        .email-footer {
+            background: #1e293b;
+            color: #cbd5e1;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .social-links {
+            margin: 25px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            margin: 0 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background: #3b82f6;
+            transform: translateY(-3px);
+        }
+        
+        .footer-links {
+            margin: 20px 0;
+        }
+        
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        @media (max-width: 600px) {
+            .email-header,
+            .email-body {
+                padding: 30px 20px;
+            }
+            
+            .email-title {
+                font-size: 24px;
+            }
+            
+            .verification-button {
+                padding: 15px 30px;
+                font-size: 16px;
+            }
+            
+            .timer {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="email-header">
+            <a href="{{ site_url }}" class="email-logo">
+                <i class="fas fa-chart-pie"></i> Kirim-Chiqim
+            </a>
+            <h1 class="email-title">{% trans "Emailni tasdiqlash" %}</h1>
+            <p class="email-subtitle">{% trans "Moliyangizni boshqarishni boshlash uchun" %}</p>
+        </div>
+        
+        <!-- Body -->
+        <div class="email-body">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <div class="welcome-icon">
+                    <i class="fas fa-envelope-open-text"></i>
+                </div>
+                <h2 class="welcome-title">
+                    {% trans "Xush kelibsiz, " %}{{ user.get_display_name }}!
+                </h2>
+                <p class="welcome-text">
+                    {% trans "Kirim-Chiqim'da ro'yxatdan o'tganingizdan xursandmiz. " %}
+                    {% trans "Moliyangizni boshqarish sari birinchi qadamni tashlash uchun email manzilingizni tasdiqlashingiz kerak." %}
+                </p>
+            </div>
+            
+            <!-- User Information -->
+            <div class="user-info">
+                <div class="info-item">
+                    <span class="info-label">{% trans "Foydalanuvchi:" %}</span>
+                    <span class="info-value">{{ user.username }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">{% trans "Email:" %}</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">{% trans "Ro'yxatdan o'tish:" %}</span>
+                    <span class="info-value">{{ user.date_joined|date:"d.m.Y H:i" }}</span>
+                </div>
+            </div>
+            
+            <!-- Verification Box -->
+            <div class="verification-box">
+                <h3 class="verification-title">
+                    <i class="fas fa-check-circle me-2"></i>
+                    {% trans "Emailingizni tasdiqlang" %}
+                </h3>
+                <p>{% trans "Quyidagi tugmani bosing va hisobingiz faollashadi:" %}</p>
+                
+                <a href="{{ verification_url }}" class="verification-button">
+                    <i class="fas fa-check me-2"></i>
+                    {% trans "EMAILNI TASDIQLASH" %}
+                </a>
+                
+                <p class="text-muted" style="margin-top: 15px; font-size: 14px;">
+                    {% trans "Tugma ishlamasa, havolani brauzeringizga nusxalang:" %}
+                </p>
+                
+                <div class="verification-code">
+                    <small class="text-muted">{% trans "Havola:" %}</small>
+                    <div style="word-break: break-all; font-size: 12px; color: #475569; margin-top: 8px;">
+                        {{ verification_url }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timer Section -->
+            <div class="timer-section">
+                <h4 class="timer-title">
+                    <i class="fas fa-clock me-2"></i>
+                    {% trans "Shoshiling! Havolaning muddati tugamoqda" %}
+                </h4>
+                <div class="timer" id="email-timer">24:00:00</div>
+                <p style="color: #92400e; font-size: 14px;">
+                    {% trans "Ushbu havola faqat 24 soat davomida amal qiladi" %}
+                </p>
+            </div>
+            
+            <!-- Steps -->
+            <div class="steps-section">
+                <h3 style="color: #1e293b; margin-bottom: 25px; text-align: center;">
+                    <i class="fas fa-list-ol me-2"></i>
+                    {% trans "Tasdiqlashdan keyin nima bo'ladi?" %}
+                </h3>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>{% trans "Hisobingiz faollashadi" %}</h4>
+                        <p>{% trans "Email tasdiqlangandan so'ng, hisobingiz to'liq faol holatga o'tadi." %}</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>{% trans "Barcha funksiyalardan foydalaning" %}</h4>
+                        <p>{% trans "Kirim-chiqimlarni kiritish, statistika ko'rish va boshqaruv funksiyalaridan foydalana olasiz." %}</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>{% trans "Moliyangizni boshqarishni boshlang" %}</h4>
+                        <p>{% trans "Dashboard'ga kirib, moliyaviy maqsadlaringizga erishishni boshlang." %}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Note -->
+            <div class="security-note">
+                <h4>
+                    <i class="fas fa-shield-alt"></i>
+                    {% trans "Xavfsizlik ogohlantirishi" %}
+                </h4>
+                <p>{% trans "Agar siz bu hisobni yaratmagan bo'lsangiz, ushbu xabarni e'tiborsiz qoldiring. " %}
+                {% trans "Hisob yaratish so'rovini siz yubormagan bo'lsangiz, biz bilan bog'laning." %}</p>
+            </div>
+            
+            <!-- Manual Verification -->
+            <div style="text-align: center; margin-top: 40px; padding: 25px; background: #f8fafc; border-radius: 12px;">
+                <h4 style="color: #475569; margin-bottom: 15px;">
+                    <i class="fas fa-code me-2"></i>
+                    {% trans "Alternativ usul" %}
+                </h4>
+                <p style="margin-bottom: 10px; color: #64748b;">
+                    {% trans "Quyidagi kodni kiriting:" %}
+                </p>
+                <div class="code">{{ token }}</div>
+                <p style="color: #ef4444; font-size: 12px; margin-top: 10px;">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    {% trans "Bu kodni hech kimga bermang!" %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="email-footer">
+            <p style="margin-bottom: 20px;">
+                <i class="fas fa-chart-pie me-2"></i>
+                <strong style="color: white;">Kirim-Chiqim</strong>
+                <br>
+                <span style="color: #94a3b8; font-size: 14px;">{% trans "Moliyangizni boshqarishning eng oson usuli" %}</span>
+            </p>
+            
+            <div class="social-links">
+                <a href="https://t.me/kirimchiqim" title="Telegram">
+                    <i class="fab fa-telegram"></i>
+                </a>
+                <a href="https://instagram.com/kirimchiqim" title="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://facebook.com/kirimchiqim" title="Facebook">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="https://twitter.com/kirimchiqim" title="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+            </div>
+            
+            <div class="footer-links">
+                <a href="{{ site_url }}/help">{% trans "Yordam" %}</a> | 
+                <a href="{{ site_url }}/contact">{% trans "Bog'lanish" %}</a> | 
+                <a href="{{ site_url }}/privacy">{% trans "Maxfiylik" %}</a> | 
+                <a href="{{ site_url }}/terms">{% trans "Shartlar" %}</a>
+            </div>
+            
+            <p style="margin-top: 25px; font-size: 12px; color: #64748b;">
+                &copy; {% now "Y" %} Kirim-Chiqim. {% trans "Barcha huquqlar himoyalangan." %}<br>
+                <small style="opacity: 0.7;">
+                    {% trans "Bu xabar avtomatik ravishda yuborilgan. Iltimos, javob yozmang." %}<br>
+                    {% trans "Email roʻyxatimizdan chiqish uchun" %} 
+                    <a href="{{ site_url }}/unsubscribe" style="color: #94a3b8;">{% trans "bosing" %}</a>.
+                </small>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Timer script
+        document.addEventListener('DOMContentLoaded', function() {
+            const timerElement = document.getElementById('email-timer');
+            let totalSeconds = 24 * 60 * 60; // 24 hours
+            
+            function updateTimer() {
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                timerElement.textContent = 
+                    `${hours.toString().padStart(2, '0')}:` +
+                    `${minutes.toString().padStart(2, '0')}:` +
+                    `${seconds.toString().padStart(2, '0')}`;
+                
+                if (totalSeconds <= 0) {
+                    timerElement.textContent = "{% trans 'Muddati tugadi' %}";
+                    timerElement.style.color = '#ef4444';
+                } else if (totalSeconds < 3600) {
+                    timerElement.style.color = '#dc2626';
+                } else if (totalSeconds < 7200) {
+                    timerElement.style.color = '#f59e0b';
+                }
+                
+                totalSeconds--;
+            }
+            
+            updateTimer();
+            setInterval(updateTimer, 1000);
+            
+            // Add click tracking for the verification button
+            const verificationButton = document.querySelector('.verification-button');
+            if (verificationButton) {
+                verificationButton.addEventListener('click', function() {
+                    console.log('Verification button clicked');
+                    // In a real implementation, you would send tracking data here
+                });
+            }
+        });
+    </script>
+</body>
+</html>

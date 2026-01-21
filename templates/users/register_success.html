@@ -1,0 +1,458 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Ro'yxatdan o'tish muvaffaqiyatli!" %} | Kirim-Chiqim{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    
+    .success-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        padding: 60px 40px;
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .success-icon {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 30px;
+        position: relative;
+        animation: success-pulse 2s infinite;
+    }
+    
+    .success-icon i {
+        font-size: 50px;
+        color: white;
+    }
+    
+    @keyframes success-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 30px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    
+    .success-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 20px;
+    }
+    
+    .success-message {
+        font-size: 1.125rem;
+        color: #64748b;
+        line-height: 1.7;
+        margin-bottom: 30px;
+    }
+    
+    .email-highlight {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        padding: 8px 16px;
+        border-radius: 12px;
+        display: inline-block;
+        margin: 10px 0;
+        font-weight: 600;
+        color: #92400e;
+        border: 2px dashed #fbbf24;
+    }
+    
+    .steps-container {
+        margin: 40px 0;
+        position: relative;
+    }
+    
+    .step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        position: relative;
+        padding-left: 60px;
+        text-align: left;
+    }
+    
+    .step-number {
+        position: absolute;
+        left: 0;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    
+    .step-content h5 {
+        margin: 0 0 8px 0;
+        color: #1e293b;
+        font-weight: 600;
+    }
+    
+    .step-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    }
+    
+    .timer-container {
+        background: #f0f9ff;
+        border-radius: 16px;
+        padding: 20px;
+        margin: 30px 0;
+        border: 2px solid #bae6fd;
+    }
+    
+    .timer {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #0369a1;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #f59e0b;
+        border-radius: 50%;
+        animation: confetti-fall 3s linear infinite;
+    }
+    
+    @keyframes confetti-fall {
+        0% {
+            transform: translateY(-100px) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(800px) rotate(720deg);
+            opacity: 0;
+        }
+    }
+    
+    .resend-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-block;
+        margin-top: 10px;
+    }
+    
+    .resend-link:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 768px) {
+        .success-card {
+            padding: 40px 20px;
+            margin: 0 20px;
+        }
+        
+        .success-title {
+            font-size: 2rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <!-- Confetti Animation -->
+        <div id="confetti-container"></div>
+        
+        <!-- Success Icon -->
+        <div class="success-icon">
+            <i class="fas fa-envelope-open-text"></i>
+        </div>
+        
+        <!-- Title -->
+        <h1 class="success-title">
+            {% trans "Tabriklaymiz!" %}
+        </h1>
+        
+        <!-- Message -->
+        <div class="success-message">
+            <p>
+                {% trans "Ro'yxatdan muvaffaqiyatli o'tdingiz! " %}
+                <strong class="email-highlight">
+                    {{ request.session.registered_email|default:"Emailingiz" }}
+                </strong>
+                {% trans " manziliga tasdiqlash havolasi yuborildi." %}
+            </p>
+            <p class="text-muted">
+                {% trans "Havolani 24 soat ichida ochishingiz kerak." %}
+            </p>
+        </div>
+        
+        <!-- Timer -->
+        <div class="timer-container text-center">
+            <p class="mb-2">
+                <i class="fas fa-clock me-2"></i>
+                {% trans "Tasdiqlash havolasining muddati:" %}
+            </p>
+            <div class="timer" id="countdown-timer">24:00:00</div>
+            <small class="text-muted">
+                {% trans "Muddati o'tgan havola yangilanishi kerak" %}
+            </small>
+        </div>
+        
+        <!-- Steps -->
+        <div class="steps-container">
+            <h4 class="text-center mb-4">
+                <i class="fas fa-list-ol me-2"></i>
+                {% trans "Keyingi qadamlar" %}
+            </h4>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h5>{% trans "Emailingizni tekshiring" %}</h5>
+                    <p>{% trans "Kirim-Chiqim' dan kelgan emailni oching. Spam papkangizni ham tekshiring." %}</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h5>{% trans "Tasdiqlash havolasini bosing" %}</h5>
+                    <p>{% trans "Emaildagi 'Emailni tasdiqlash' tugmasini bosing yoki havolani oching." %}</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h5>{% trans "Hisobingizni boshlang" %}</h5>
+                    <p>{% trans "Tasdiqlashdan so'ng, hisobingizga kirib, moliyangizni boshqarishni boshlashingiz mumkin." %}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{% url 'users:login' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                {% trans "Kirish sahifasi" %}
+            </a>
+            
+            <a href="{% url 'home' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-home me-2"></i>
+                {% trans "Bosh sahifa" %}
+            </a>
+            
+            <button type="button" id="resend-email-btn" class="btn btn-outline-success btn-lg">
+                <i class="fas fa-redo me-2"></i>
+                {% trans "Emailni qayta yuborish" %}
+            </button>
+        </div>
+        
+        <!-- Resend Information -->
+        <div class="mt-4">
+            <p class="text-muted">
+                <small>
+                    <i class="fas fa-info-circle me-1"></i>
+                    {% trans "Email kelmaganmi?" %}
+                    <a href="#" class="resend-link" id="resend-link">
+                        {% trans "Qayta yuborish" %}
+                    </a>
+                    {% trans "yoki" %}
+                    <a href="{% url 'contact' %}" class="resend-link">
+                        {% trans "biz bilan bog'laning" %}
+                    </a>
+                </small>
+            </p>
+        </div>
+        
+        <!-- Troubleshooting -->
+        <div class="mt-5 pt-4 border-top">
+            <h6 class="fw-bold mb-3">
+                <i class="fas fa-question-circle me-2"></i>
+                {% trans "Muammolaringiz bormi?" %}
+            </h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold">
+                                <i class="fas fa-search text-warning me-2"></i>
+                                {% trans "Spam papkasini tekshiring" %}
+                            </h6>
+                            <p class="small mb-0">
+                                {% trans "Ba'zan email'lar spam papkasiga tushishi mumkin." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                {% trans "Email manzilini tekshiring" %}
+                            </h6>
+                            <p class="small mb-0">
+                                {% trans "Ro'yxatdan o'tishda kiritgan emailingizni tekshiring." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create confetti
+    function createConfetti() {
+        const container = document.getElementById('confetti-container');
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+        
+        for (let i = 0; i < 100; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = Math.random() * 10 + 5 + 'px';
+            confetti.style.height = confetti.style.width;
+            container.appendChild(confetti);
+        }
+    }
+    
+    // Countdown timer
+    function startCountdown() {
+        const timerElement = document.getElementById('countdown-timer');
+        let totalSeconds = 24 * 60 * 60; // 24 hours
+        
+        const timer = setInterval(() => {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            timerElement.textContent = 
+                `${hours.toString().padStart(2, '0')}:` +
+                `${minutes.toString().padStart(2, '0')}:` +
+                `${seconds.toString().padStart(2, '0')}`;
+            
+            // Change color when less than 1 hour
+            if (totalSeconds < 3600) {
+                timerElement.style.color = '#ef4444';
+            }
+            
+            if (totalSeconds <= 0) {
+                clearInterval(timer);
+                timerElement.textContent = "{% trans 'Muddati tugadi' %}";
+                document.getElementById('resend-email-btn').classList.remove('d-none');
+            }
+            
+            totalSeconds--;
+        }, 1000);
+    }
+    
+    // Resend email functionality
+    document.getElementById('resend-email-btn').addEventListener('click', function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>{% trans "Yuborilmoqda..." %}';
+        
+        // Simulate API call
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>{% trans "Yuborildi!" %}';
+            btn.classList.remove('btn-outline-success');
+            btn.classList.add('btn-success');
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alert.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <div>{% trans "Tasdiqlash emaili qayta yuborildi!" %}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.steps-container').before(alert);
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            }, 3000);
+            
+            // Reset countdown
+            const timerElement = document.getElementById('countdown-timer');
+            timerElement.textContent = '24:00:00';
+            timerElement.style.color = '#0369a1';
+            
+        }, 2000);
+    });
+    
+    // Quick resend link
+    document.getElementById('resend-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('resend-email-btn').click();
+    });
+    
+    // Initialize
+    createConfetti();
+    startCountdown();
+    
+    // Auto-check for email verification
+    function checkVerificationStatus() {
+        // This would typically check with an API endpoint
+        console.log('Checking verification status...');
+    }
+    
+    // Check every 30 seconds
+    setInterval(checkVerificationStatus, 30000);
+});
+</script>
+{% endblock %}

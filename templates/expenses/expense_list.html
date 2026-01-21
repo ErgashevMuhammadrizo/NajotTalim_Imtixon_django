@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Chiqimlar" %} | Kirim-Chiqim{% endblock %}
+
+{% block extra_css %}
+<style>
+.filter-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.filter-header h5 {
+    margin: 0;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.expense-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+    border-left: 4px solid #ef4444;
+}
+
+.expense-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+    border-color: #dc2626;
+}
+
+.expense-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.expense-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ef4444;
+}
+
+.expense-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: #fef2f2;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: #dc2626;
+}
+
+.expense-description {
+    color: #475569;
+    margin: 10px 0;
+    line-height: 1.5;
+}
+
+.expense-meta {
+    display: flex;
+    gap: 20px;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.expense-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.expense-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 15px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.pagination-wrapper {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-2">{% trans "Chiqimlar" %}</h1>
+            <p class="text-muted mb-0">{% trans "Barcha chiqimlaringizni boshqarish" %}</p>
+        </div>
+        <div>
+            <a href="{% url 'expenses:create' %}" class="btn btn-danger">
+                <i class="fas fa-plus me-2"></i>{% trans "Yangi chiqim" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <div class="filter-header">
+            <h5><i class="fas fa-filter me-2"></i>{% trans "Filtrlash" %}</h5>
+            <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo me-1"></i>{% trans "Tozalash" %}
+            </button>
+        </div>
+        
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">{% trans "Kategoriya" %}</label>
+                <select name="category" class="form-select">
+                    <option value="">{% trans "Barcha kategoriyalar" %}</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if filter_params.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">{% trans "Valyuta" %}</label>
+                <select name="currency" class="form-select">
+                    <option value="">{% trans "Barcha valyutalar" %}</option>
+                    <option value="UZS" {% if filter_params.currency == "UZS" %}selected{% endif %}>UZS</option>
+                    <option value="USD" {% if filter_params.currency == "USD" %}selected{% endif %}>USD</option>
+                    <option value="EUR" {% if filter_params.currency == "EUR" %}selected{% endif %}>EUR</option>
+                    <option value="RUB" {% if filter_params.currency == "RUB" %}selected{% endif %}>RUB</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">{% trans "To'lov usuli" %}</label>
+                <select name="payment_method" class="form-select">
+                    <option value="">{% trans "Barchasi" %}</option>
+                    <option value="cash" {% if filter_params.payment_method == "cash" %}selected{% endif %}>{% trans "Naqd pul" %}</option>
+                    <option value="card" {% if filter_params.payment_method == "card" %}selected{% endif %}>{% trans "Bank kartasi" %}</option>
+                    <option value="transfer" {% if filter_params.payment_method == "transfer" %}selected{% endif %}>{% trans "O'tkazma" %}</option>
+                    <option value="online" {% if filter_params.payment_method == "online" %}selected{% endif %}>{% trans "Onlayn to'lov" %}</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">{% trans "Dan" %}</label>
+                <input type="date" name="date_from" class="form-control" value="{{ filter_params.date_from }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">{% trans "Gacha" %}</label>
+                <input type="date" name="date_to" class="form-control" value="{{ filter_params.date_to }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">{% trans "Qidirish" %}</label>
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="{% trans "Izoh yoki manzil" %}" value="{{ filter_params.search }}">
+                    <button class="btn btn-danger" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        {% trans "Jami" %}: <strong>{{ total_amount|intcomma }} UZS</strong>
+                    </div>
+                    <div>
+                        <a href="{% url 'expenses:export_csv' %}" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-file-csv me-1"></i>CSV
+                        </a>
+                        <a href="{% url 'expenses:export_excel' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-file-excel me-1"></i>Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Expense List -->
+    {% if expenses %}
+    <div class="row">
+        {% for expense in expenses %}
+        <div class="col-12">
+            <div class="expense-card">
+                <div class="expense-header">
+                    <div>
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <span class="expense-category">
+                                {% if expense.category.icon %}
+                                <i class="{{ expense.category.icon }}"></i>
+                                {% endif %}
+                                {{ expense.category.name|default:"Kategoriyasi yo'q" }}
+                            </span>
+                            <span class="badge bg-light text-dark">
+                                {{ expense.get_payment_method_display }}
+                            </span>
+                        </div>
+                        <h5 class="mb-1">
+                            <span class="expense-amount">-{{ expense.amount|intcomma }} {{ expense.currency }}</span>
+                            {% if expense.currency != 'UZS' %}
+                            <small class="text-muted ms-2">(≈{{ expense.amount_in_uzs|intcomma }} UZS)</small>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted mb-2">{{ expense.date }}</div>
+                        <div class="small text-muted">{{ expense.time|time:"H:i" }}</div>
+                    </div>
+                </div>
+                
+                {% if expense.description %}
+                <div class="expense-description">
+                    {{ expense.description|linebreaksbr }}
+                </div>
+                {% endif %}
+                
+                <div class="expense-meta">
+                    {% if expense.location %}
+                    <div class="expense-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ expense.location }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if expense.tags.all %}
+                    <div class="expense-meta-item">
+                        <i class="fas fa-tags"></i>
+                        <span>
+                            {% for tag in expense.tags.all %}
+                            <span class="badge bg-secondary">{{ tag.name }}</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if expense.receipt_image %}
+                    <div class="expense-meta-item">
+                        <i class="fas fa-receipt"></i>
+                        <span>{% trans "Chek bor" %}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="expense-actions">
+                    <a href="{% url 'expenses:detail' expense.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i>{% trans "Ko'rish" %}
+                    </a>
+                    <a href="{% url 'expenses:update' expense.id %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-edit me-1"></i>{% trans "Tahrirlash" %}
+                    </a>
+                    <a href="{% url 'expenses:delete' expense.id %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash me-1"></i>{% trans "O'chirish" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-wrapper">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-receipt empty-icon"></i>
+        <h3 class="mb-3">{% trans "Chiqimlar topilmadi" %}</h3>
+        <p class="text-muted mb-4">{% trans "Hozircha chiqim qayd etilmagan. Birinchi chiqimingizni qo'shing." %}</p>
+        <a href="{% url 'expenses:create' %}" class="btn btn-danger btn-lg">
+            <i class="fas fa-plus me-2"></i>{% trans "Birinchi chiqim qo'shish" %}
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function resetFilters() {
+    const url = new URL(window.location.href);
+    url.search = '';
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

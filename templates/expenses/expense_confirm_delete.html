@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Chiqimni o'chirish" %} | Kirim-Chiqim{% endblock %}
+
+{% block extra_css %}
+<style>
+.delete-card {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.warning-icon {
+    font-size: 4rem;
+    color: #f59e0b;
+    margin-bottom: 20px;
+}
+
+.expense-info {
+    background: #fef2f2;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+    border-left: 4px solid #ef4444;
+}
+
+.expense-amount {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ef4444;
+    margin-bottom: 10px;
+}
+
+.expense-details {
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+.alert-text {
+    background: #fef3c7;
+    border-radius: 8px;
+    padding: 15px;
+    color: #92400e;
+    margin-bottom: 25px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-delete {
+    min-width: 120px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="delete-card">
+        <!-- Warning Icon -->
+        <div class="warning-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+
+        <!-- Title -->
+        <h2 class="mb-3">{% trans "Chiqimni o'chirish" %}</h2>
+        <p class="text-muted mb-4">
+            {% trans "Haqiqatan ham bu chiqimni o'chirib tashlamoqchimisiz?" %}
+        </p>
+
+        <!-- Expense Info -->
+        <div class="expense-info">
+            <div class="expense-amount">
+                -{{ expense.amount|intcomma }} {{ expense.currency }}
+                {% if expense.currency != 'UZS' %}
+                <small class="text-muted">(≈{{ expense.amount_in_uzs|intcomma }} UZS)</small>
+                {% endif %}
+            </div>
+            <div class="expense-details">
+                <div><strong>{% trans "Kategoriya:" %}</strong> {{ expense.category.name|default:"N/A" }}</div>
+                <div><strong>{% trans "Sana:" %}</strong> {{ expense.date }}</div>
+                {% if expense.description %}
+                <div><strong>{% trans "Izoh:" %}</strong> {{ expense.description|truncatechars:100 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="alert-text">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong>{% trans "Eslatma:" %}</strong>
+            {% trans "Bu amalni bekor qilib bo'lmaydi. Chiqim butunlay o'chib ketadi." %}
+        </div>
+
+        <!-- Action Buttons -->
+        <form method="post">
+            {% csrf_token %}
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-danger btn-delete">
+                    <i class="fas fa-trash me-2"></i>{% trans "O'chirish" %}
+                </button>
+                <a href="{% url 'expenses:detail' expense.id %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>{% trans "Bekor qilish" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
